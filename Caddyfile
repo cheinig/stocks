@@ -1,0 +1,87 @@
+# Caddyfile for Stock Status Application
+# Provides automatic HTTPS with Let's Encrypt
+
+{
+    # Global options
+    email {$ACME_EMAIL}
+    # Uncomment for testing with Let's Encrypt staging server
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# Main domain configuration
+{$DOMAIN:localhost} {
+    # Enable compression
+    encode gzip
+
+    # Security headers
+    header {
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Enable XSS protection
+        X-XSS-Protection "1; mode=block"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove Server header
+        -Server
+    }
+
+    # API endpoints - proxy to backend
+    handle /api/* {
+        reverse_proxy backend:8080 {
+            # Health check
+            health_uri /actuator/health
+            health_interval 30s
+            health_timeout 10s
+
+            # Headers
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Actuator endpoints (optional, can be restricted)
+    handle /actuator/* {
+        reverse_proxy backend:8080
+    }
+
+    # OpenAPI/Swagger documentation
+    handle /swagger-ui/* {
+        reverse_proxy backend:8080
+    }
+
+    handle /v3/api-docs* {
+        reverse_proxy backend:8080
+    }
+
+    # Frontend - serve from Angular container
+    handle {
+        reverse_proxy frontend:80 {
+            # Health check
+            health_uri /health
+            health_interval 30s
+            health_timeout 5s
+
+            # Headers
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+    }
+}
+
+# HTTP to HTTPS redirect (automatic with Caddy)

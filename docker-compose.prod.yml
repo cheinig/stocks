@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: stock-status-db-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stockstatus}
+      POSTGRES_USER: ${POSTGRES_USER:-stockstatus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stockstatus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stock-status-network
+
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: stock-status-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stock-status-network
+
+  # Spring Boot Backend
+  backend:
+    image: stock-status-backend:latest
+    container_name: stock-status-backend-prod
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-stockstatus}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-stockstatus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: 8080
+      ALLOWED_ORIGINS: https://${DOMAIN:-localhost}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      CACHE_ENABLED: true
+    networks:
+      - stock-status-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Angular Frontend
+  frontend:
+    image: stock-status-frontend:latest
+    container_name: stock-status-frontend-prod
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - stock-status-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Caddy Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: stock-status-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - stock-status-network
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+
+  # Database Backup Service
+  backup:
+    image: postgres:15-alpine
+    container_name: stock-status-backup
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-stockstatus}
+      POSTGRES_USER: ${POSTGRES_USER:-stockstatus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_CRON: ${BACKUP_CRON:-0 2 * * *}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    entrypoint: /bin/sh
+    command: -c "apk add --no-cache dcron && echo \"$${BACKUP_CRON} /backup.sh\" | crontab - && crond -f -l 2"
+    networks:
+      - stock-status-network
+
+networks:
+  stock-status-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

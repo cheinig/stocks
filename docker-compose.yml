@@ -1,0 +1,76 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: stock-status-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stockstatus}
+      POSTGRES_USER: ${POSTGRES_USER:-stockstatus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stockstatus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stock-status-network
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock-status-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-stockstatus}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-stockstatus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-dev123}
+      SERVER_PORT: 8080
+      ALLOWED_ORIGINS: http://localhost:4200,http://localhost
+    ports:
+      - "8080:8080"
+    networks:
+      - stock-status-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Angular Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stock-status-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+    networks:
+      - stock-status-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  stock-status-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
