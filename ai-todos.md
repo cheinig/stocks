@@ -2,74 +2,74 @@
 
 Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation basierend auf den Spezifikationen.
 
-## Phase 1: Projekt-Setup & Infrastruktur
+## Phase 1: Projekt-Setup & Infrastruktur ✅
 
-### 1.1 Projekt-Struktur initialisieren
-- [ ] Monorepo-Struktur erstellen mit Frontend- und Backend-Verzeichnissen
-- [ ] `.gitignore` Datei erstellen für Node, Java, Docker und IDE-spezifische Dateien
-- [ ] README.md mit Projektbeschreibung und Setup-Anleitung erstellen
-- [ ] `.env.example` Datei mit allen benötigten Umgebungsvariablen erstellen
+### 1.1 Projekt-Struktur initialisieren ✅
+- [x] Monorepo-Struktur erstellen mit Frontend- und Backend-Verzeichnissen
+- [x] `.gitignore` Datei erstellen für Node, Java, Docker und IDE-spezifische Dateien
+- [x] README.md mit Projektbeschreibung und Setup-Anleitung erstellen
+- [x] `.env.example` Datei mit allen benötigten Umgebungsvariablen erstellen
 
-### 1.2 Backend-Setup (Spring Boot)
-- [ ] Spring Boot 3.x Projekt mit Maven/Gradle initialisieren
-- [ ] Dependencies hinzufügen: Spring Web, Spring Data JPA, PostgreSQL Driver, Lombok, Validation
-- [ ] Dependencies hinzufügen: Springdoc OpenAPI für API-Dokumentation
-- [ ] Dependencies hinzufügen: Apache POI für Excel-Import, OpenCSV für CSV-Import
-- [ ] Modulare Package-Struktur erstellen: `web`, `service`, `repository`, `config`, `domain`
-- [ ] `application.yml` mit Profilen (`local`, `prod`) konfigurieren
-- [ ] Logging-Konfiguration (Logback) mit JSON-Format einrichten
+### 1.2 Backend-Setup (Spring Boot) ✅
+- [x] Spring Boot 3.x Projekt mit Maven/Gradle initialisieren
+- [x] Dependencies hinzufügen: Spring Web, Spring Data JPA, PostgreSQL Driver, Lombok, Validation
+- [x] Dependencies hinzufügen: Springdoc OpenAPI für API-Dokumentation
+- [x] Dependencies hinzufügen: Apache POI für Excel-Import, OpenCSV für CSV-Import
+- [x] Modulare Package-Struktur erstellen: `web`, `service`, `repository`, `config`, `domain`
+- [x] `application.yml` mit Profilen (`local`, `prod`) konfigurieren
+- [x] Logging-Konfiguration (Logback) mit JSON-Format einrichten
 
-### 1.3 Frontend-Setup (Angular)
-- [ ] Angular 21+ Projekt mit Standalone Components initialisieren
-- [ ] Angular Material installieren und Dark Theme konfigurieren
-- [ ] Chart.js für Visualisierungen installieren
-- [ ] Angular Router konfigurieren
-- [ ] ESLint und Prettier konfigurieren
-- [ ] Environment-Dateien für `development` und `production` erstellen
-- [ ] HTTP Interceptor für API-Aufrufe vorbereiten
+### 1.3 Frontend-Setup (Angular) ✅
+- [x] Angular 21+ Projekt mit Standalone Components initialisieren
+- [x] Angular Material installieren und Dark Theme konfigurieren
+- [x] Chart.js für Visualisierungen installieren
+- [x] Angular Router konfigurieren
+- [x] ESLint und Prettier konfigurieren
+- [x] Environment-Dateien für `development` und `production` erstellen
+- [x] HTTP Interceptor für API-Aufrufe vorbereiten
 
-### 1.4 Datenbank-Setup
-- [ ] PostgreSQL Docker Container Konfiguration erstellen
-- [ ] Flyway für Datenbank-Migrationen einrichten
-- [ ] Erste Migration: Datenbank-Schema für Stocks-Tabelle erstellen
-- [ ] Migration für ETFs-Tabelle erstellen
-- [ ] Migration für ETF-Allocations-Tabelle erstellen (Verknüpfung ETF zu Stocks)
-- [ ] Migration für Portfolio-Tabelle erstellen
-- [ ] Seed-Skript für Beispiel-Länder und Branchen erstellen
+### 1.4 Datenbank-Setup ✅
+- [x] PostgreSQL Docker Container Konfiguration erstellen
+- [x] Flyway für Datenbank-Migrationen einrichten
+- [x] Erste Migration: Datenbank-Schema für Stocks-Tabelle erstellen
+- [x] Migration für ETFs-Tabelle erstellen
+- [x] Migration für ETF-Allocations-Tabelle erstellen (Verknüpfung ETF zu Stocks)
+- [x] Migration für Portfolio-Tabelle erstellen
+- [x] Seed-Skript für Beispiel-Länder und Branchen erstellen
 
-### 1.5 Docker & Deployment
-- [ ] Dockerfile für Spring Boot Backend erstellen
-- [ ] Dockerfile für Angular Frontend (Multi-stage mit NGINX) erstellen
-- [ ] `docker-compose.yml` für lokale Entwicklung erstellen (Frontend, Backend, DB)
-- [ ] `docker-compose.prod.yml` für Production mit Redis und Backup-Service erstellen
-- [ ] Caddyfile für Reverse Proxy mit TLS erstellen
-- [ ] Backup-Script für PostgreSQL `pg_dump` mit GPG-Verschlüsselung erstellen
+### 1.5 Docker & Deployment ✅
+- [x] Dockerfile für Spring Boot Backend erstellen
+- [x] Dockerfile für Angular Frontend (Multi-stage mit NGINX) erstellen
+- [x] `docker-compose.yml` für lokale Entwicklung erstellen (Frontend, Backend, DB)
+- [x] `docker-compose.prod.yml` für Production mit Redis und Backup-Service erstellen
+- [x] Caddyfile für Reverse Proxy mit TLS erstellen
+- [x] Backup-Script für PostgreSQL `pg_dump` mit GPG-Verschlüsselung erstellen
 
-## Phase 2: Backend - Domänenmodell & Basis-Entities
+## Phase 2: Backend - Domänenmodell & Basis-Entities ✅
 
-### 2.1 Stock Entity & Repository
-- [ ] `Stock` Entity erstellen mit Feldern: id, name, isin, country, sector, createdAt, updatedAt
-- [ ] Optimistic Locking (@Version) für Stock Entity hinzufügen
-- [ ] `StockRepository` Interface mit Spring Data JPA erstellen
-- [ ] Custom Query-Methoden hinzufügen: findByIsin, findByCountry, searchByName
+### 2.1 Stock Entity & Repository ✅
+- [x] `Stock` Entity erstellen mit Feldern: id, name, isin, country, sector, createdAt, updatedAt
+- [x] Optimistic Locking (@Version) für Stock Entity hinzufügen
+- [x] `StockRepository` Interface mit Spring Data JPA erstellen
+- [x] Custom Query-Methoden hinzufügen: findByIsin, findByCountry, searchByName
 
-### 2.2 ETF Entity & Repository
-- [ ] `ETF` Entity erstellen mit Feldern: id, name, isin, importerType, createdAt, updatedAt
-- [ ] Enum `ImporterType` für verschiedene CSV/Excel-Importer erstellen
-- [ ] `ETFRepository` Interface erstellen
-- [ ] Custom Query-Methoden: findByIsin, findAll mit Pagination
+### 2.2 ETF Entity & Repository ✅
+- [x] `ETF` Entity erstellen mit Feldern: id, name, isin, importerType, createdAt, updatedAt
+- [x] Enum `ImporterType` für verschiedene CSV/Excel-Importer erstellen
+- [x] `ETFRepository` Interface erstellen
+- [x] Custom Query-Methoden: findByIsin, findAll mit Pagination
 
-### 2.3 ETF Allocation Entity & Repository
-- [ ] `ETFAllocation` Entity erstellen mit Feldern: id, etfId, stockId, percentage, uploadDate, version
-- [ ] Bidirektionale Beziehung zu ETF und Stock definieren (@ManyToOne)
-- [ ] `ETFAllocationRepository` Interface erstellen
-- [ ] Query-Methoden: findByEtfId, findLatestByEtfId, deleteAllByEtfIdAndVersion
+### 2.3 ETF Allocation Entity & Repository ✅
+- [x] `ETFAllocation` Entity erstellen mit Feldern: id, etfId, stockId, percentage, uploadDate, version
+- [x] Bidirektionale Beziehung zu ETF und Stock definieren (@ManyToOne)
+- [x] `ETFAllocationRepository` Interface erstellen
+- [x] Query-Methoden: findByEtfId, findLatestByEtfId, deleteAllByEtfIdAndVersion
 
-### 2.4 Portfolio Entity & Repository
-- [ ] `Portfolio` Entity erstellen mit Feldern: id, userId (optional für zukünftige Multi-User), name
-- [ ] `PortfolioPosition` Entity erstellen: id, portfolioId, assetType (STOCK/ETF), assetId, quantity
-- [ ] `PortfolioRepository` und `PortfolioPositionRepository` erstellen
-- [ ] Query-Methoden für Portfolio-Positionen
+### 2.4 Portfolio Entity & Repository ✅
+- [x] `Portfolio` Entity erstellen mit Feldern: id, userId (optional für zukünftige Multi-User), name
+- [x] `PortfolioPosition` Entity erstellen: id, portfolioId, assetType (STOCK/ETF), assetId, quantity
+- [x] `PortfolioRepository` und `PortfolioPositionRepository` erstellen
+- [x] Query-Methoden für Portfolio-Positionen
 
 ## Phase 3: Backend - Business Logic & Services
 
