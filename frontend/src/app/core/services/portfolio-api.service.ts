@@ -52,15 +52,28 @@ export class PortfolioApiService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
+  // Position Management
+  getPositions(portfolioId: number): Observable<PortfolioPosition[]> {
+    return this.http.get<PortfolioPosition[]>(`${this.baseUrl}/${portfolioId}/positions`);
+  }
+
   addPosition(portfolioId: number, request: PortfolioPositionRequest): Observable<PortfolioPosition> {
     return this.http.post<PortfolioPosition>(`${this.baseUrl}/${portfolioId}/positions`, request);
   }
 
-  updatePosition(portfolioId: number, positionId: number, request: PortfolioPositionRequest): Observable<PortfolioPosition> {
-    return this.http.put<PortfolioPosition>(`${this.baseUrl}/${portfolioId}/positions/${positionId}`, request);
+  updatePosition(positionId: number, request: PortfolioPositionRequest): Observable<PortfolioPosition> {
+    return this.http.put<PortfolioPosition>(`${this.baseUrl}/positions/${positionId}`, request);
   }
 
-  deletePosition(portfolioId: number, positionId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${portfolioId}/positions/${positionId}`);
+  deletePosition(positionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/positions/${positionId}`);
+  }
+
+  getStockPositions(portfolioId: number): Observable<PortfolioPosition[]> {
+    return this.http.get<PortfolioPosition[]>(`${this.baseUrl}/${portfolioId}/positions/stocks`);
+  }
+
+  getEtfPositions(portfolioId: number): Observable<PortfolioPosition[]> {
+    return this.http.get<PortfolioPosition[]>(`${this.baseUrl}/${portfolioId}/positions/etfs`);
   }
 }

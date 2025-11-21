@@ -24,6 +24,8 @@ public class PortfolioPositionResponseDTO {
     private AssetType assetType;
     private Long assetId;
     private BigDecimal quantity;
+    private String assetName;
+    private String assetIsin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

@@ -155,15 +155,15 @@ export class PortfolioStateService {
     );
   }
 
-  updatePosition(portfolioId: number, positionId: number, request: PortfolioPositionRequest) {
+  updatePosition(positionId: number, request: PortfolioPositionRequest) {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.portfolioApi.updatePosition(portfolioId, positionId, request).pipe(
+    return this.portfolioApi.updatePosition(positionId, request).pipe(
       tap({
         next: (updatedPosition: PortfolioPosition) => {
           this._currentPortfolio.update(portfolio => {
-            if (portfolio && portfolio.id === portfolioId) {
+            if (portfolio) {
               return {
                 ...portfolio,
                 positions: portfolio.positions.map(p =>
@@ -183,15 +183,15 @@ export class PortfolioStateService {
     );
   }
 
-  deletePosition(portfolioId: number, positionId: number) {
+  deletePosition(positionId: number) {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.portfolioApi.deletePosition(portfolioId, positionId).pipe(
+    return this.portfolioApi.deletePosition(positionId).pipe(
       tap({
         next: () => {
           this._currentPortfolio.update(portfolio => {
-            if (portfolio && portfolio.id === portfolioId) {
+            if (portfolio) {
               return {
                 ...portfolio,
                 positions: portfolio.positions.filter(p => p.id !== positionId)

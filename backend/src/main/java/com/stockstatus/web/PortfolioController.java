@@ -1,12 +1,17 @@
 package com.stockstatus.web;
 
+import com.stockstatus.domain.AssetType;
 import com.stockstatus.domain.Portfolio;
 import com.stockstatus.domain.PortfolioPosition;
+import com.stockstatus.domain.Stock;
+import com.stockstatus.domain.ETF;
 import com.stockstatus.dto.PortfolioPositionRequestDTO;
 import com.stockstatus.dto.PortfolioPositionResponseDTO;
 import com.stockstatus.dto.PortfolioRequestDTO;
 import com.stockstatus.dto.PortfolioResponseDTO;
 import com.stockstatus.service.PortfolioService;
+import com.stockstatus.service.StockService;
+import com.stockstatus.service.ETFService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +36,8 @@ import java.util.stream.Collectors;
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
+    private final StockService stockService;
+    private final ETFService etfService;
 
     /**
      * Create a new portfolio
@@ -90,7 +97,15 @@ public class PortfolioController {
         log.debug("REST request to get Portfolio with positions by ID: {}", id);
 
         Portfolio portfolio = portfolioService.findByIdWithPositions(id);
-        PortfolioResponseDTO response = PortfolioResponseDTO.fromEntityWithPositions(portfolio);
+        PortfolioResponseDTO response = PortfolioResponseDTO.fromEntity(portfolio);
+
+        // Enrich positions with asset information
+        if (portfolio.getPositions() != null) {
+            List<PortfolioPositionResponseDTO> enrichedPositions = portfolio.getPositions().stream()
+                .map(this::enrichPositionWithAssetInfo)
+                .collect(Collectors.toList());
+            response.setPositions(enrichedPositions);
+        }
 
         return ResponseEntity.ok(response);
     }
@@ -148,7 +163,7 @@ public class PortfolioController {
             request.getQuantity()
         );
 
-        PortfolioPositionResponseDTO response = PortfolioPositionResponseDTO.fromEntity(position);
+        PortfolioPositionResponseDTO response = enrichPositionWithAssetInfo(position);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -165,7 +180,7 @@ public class PortfolioController {
         log.info("REST request to update Position ID: {}", positionId);
 
         PortfolioPosition position = portfolioService.updatePosition(positionId, request.getQuantity());
-        PortfolioPositionResponseDTO response = PortfolioPositionResponseDTO.fromEntity(position);
+        PortfolioPositionResponseDTO response = enrichPositionWithAssetInfo(position);
 
         return ResponseEntity.ok(response);
     }
@@ -193,7 +208,7 @@ public class PortfolioController {
 
         List<PortfolioPosition> positions = portfolioService.getPositions(id);
         List<PortfolioPositionResponseDTO> response = positions.stream()
-            .map(PortfolioPositionResponseDTO::fromEntity)
+            .map(this::enrichPositionWithAssetInfo)
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -209,7 +224,7 @@ public class PortfolioController {
 
         List<PortfolioPosition> positions = portfolioService.getStockPositions(id);
         List<PortfolioPositionResponseDTO> response = positions.stream()
-            .map(PortfolioPositionResponseDTO::fromEntity)
+            .map(this::enrichPositionWithAssetInfo)
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -225,9 +240,28 @@ public class PortfolioController {
 
         List<PortfolioPosition> positions = portfolioService.getEtfPositions(id);
         List<PortfolioPositionResponseDTO> response = positions.stream()
-            .map(PortfolioPositionResponseDTO::fromEntity)
+            .map(this::enrichPositionWithAssetInfo)
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Enrich PortfolioPositionResponseDTO with asset name and ISIN
+     */
+    private PortfolioPositionResponseDTO enrichPositionWithAssetInfo(PortfolioPosition position) {
+        PortfolioPositionResponseDTO dto = PortfolioPositionResponseDTO.fromEntity(position);
+
+        if (position.getAssetType() == AssetType.STOCK) {
+            Stock stock = stockService.findById(position.getAssetId());
+            dto.setAssetName(stock.getName());
+            dto.setAssetIsin(stock.getIsin());
+        } else if (position.getAssetType() == AssetType.ETF) {
+            ETF etf = etfService.findById(position.getAssetId());
+            dto.setAssetName(etf.getName());
+            dto.setAssetIsin(etf.getIsin());
+        }
+
+        return dto;
     }
 }
