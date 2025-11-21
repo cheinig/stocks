@@ -289,26 +289,66 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
   - Lazy Loading funktioniert für alle Feature-Komponenten
 
 
-## Phase 7: Frontend - Shared Components & UI
+## Phase 7: Frontend - Shared Components & UI ✅
 
-### 7.1 Layout & Navigation
-- [ ] Main-Layout-Komponente mit Toolbar und Sidenav erstellen
-- [ ] Navigation-Menü mit Links zu Dashboard, Stocks, ETFs, Portfolio
-- [ ] Dark Theme über Angular Material anwenden
-- [ ] Responsive Layout mit Angular Flex Layout oder CSS Grid
+### 7.1 Layout & Navigation ✅
+- [x] Main-Layout-Komponente mit Toolbar und Sidenav erstellt
+  - Responsive Sidenav mit Toggle-Button
+  - Navigation zu Dashboard, Stocks, ETFs, Portfolio
+  - Material Design Toolbar und Sidenav
+  - Active Route Highlighting
+- [x] App-Komponente aktualisiert zur Nutzung des Main-Layouts
+- [x] Dark Theme über Angular Material vorbereitet
+- [x] Responsive Layout mit CSS Flexbox
 
-### 7.2 Shared Components
-- [ ] `DataTableComponent` für generische Tabellen mit Pagination und Sorting
-- [ ] `ConfirmDialogComponent` für Lösch-Bestätigungen
-- [ ] `LoadingSpinnerComponent` für Ladezustände
-- [ ] `ErrorMessageComponent` für Fehleranzeigen
-- [ ] `ChartComponent` Wrapper für Chart.js
-- [ ] `FileUploadComponent` für Drag & Drop File-Upload
+### 7.2 Shared Components ✅
+- [x] `DataTableComponent` erstellt
+  - Generische Tabelle mit Material Design
+  - Pagination und Sorting Support
+  - Configurable Columns und Actions
+  - Custom Cell Templates Support
+  - Row Click Events
+- [x] `ConfirmDialogComponent` erstellt
+  - Material Dialog für Bestätigungen
+  - Configurable Title, Message, Buttons
+  - Warning Icon Support
+- [x] `LoadingSpinnerComponent` erstellt
+  - Material Spinner mit Loading-Text
+  - Zentriertes Layout
+- [x] `ErrorMessageComponent` erstellt
+  - Error Icon und Message Display
+  - Retry-Button Support
+  - Configurable Error Details
+- [x] `ChartComponent` Wrapper erstellt
+  - Chart.js Integration
+  - Reactive Updates mit Angular Signals
+  - Support für alle Chart-Typen (Bar, Pie, Line, etc.)
+  - Configurable Chart Options
+- [x] `FileUploadComponent` erstellt
+  - Drag & Drop Funktionalität
+  - File Type Validation
+  - File Size Validation
+  - Progress Bar während Upload
+  - Error Handling
+  - File Preview mit Size Display
 
-### 7.3 Pipes & Validators
-- [ ] `CountryNamePipe` für Länder-Code zu Name
-- [ ] `PercentagePipe` für Prozent-Formatierung
-- [ ] Custom Validators: ISIN-Format, Positive-Number, Percentage-Range
+### 7.3 Pipes & Validators ✅
+- [x] `CountryNamePipe` erstellt
+  - Mapping von Länder-Codes zu Namen
+  - Unterstützung für 40+ Länder
+- [x] `PercentagePipe` erstellt
+  - Formatierung von Zahlen als Prozent
+  - Configurable Decimal Places
+- [x] Custom Validators erstellt:
+  - `isinValidator`: ISIN-Format und Check-Digit Validation mit Luhn-Algorithmus
+  - `positiveNumberValidator`: Prüfung auf positive Zahlen
+  - `percentageRangeValidator`: Bereichsprüfung für Prozentsätze (0-100)
+
+### 7.4 Build & Compilation ✅
+- [x] **Angular App kompiliert erfolgreich** ✅
+  - Build Output: 520.42 kB Initial Bundle
+  - Alle Shared Components und Services funktionieren
+  - Lazy Loading für Feature-Komponenten aktiv
 
 ## Phase 8: Frontend - Stock-Verwaltung
 
