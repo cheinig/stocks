@@ -224,44 +224,70 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
   - CRUD operations test
 - [x] **Alle 51 Tests erfolgreich** ✅
 
-## Phase 6: Frontend - Basis-Setup & Routing
+## Phase 6: Frontend - Basis-Setup & Routing ✅
 
-### 6.1 Komponenten-Struktur
-- [ ] `CoreModule` für Singleton-Services und Guards erstellen (oder Standalone-Äquivalent)
-- [ ] `SharedModule` für wiederverwendbare Komponenten und Pipes
-- [ ] Ordnerstruktur: `features/`, `shared/`, `core/`, `models/`
+### 6.1 Komponenten-Struktur ✅
+- [x] Ordnerstruktur erstellt: `features/`, `shared/`, `core/`, `models/`
+- [x] `core/services/` für API Services und State Management
+- [x] `core/interceptors/` für HTTP Interceptors
+- [x] TypeScript Models und Interfaces erstellt
 
-### 6.2 Routing
-- [ ] App-Router mit Routes konfigurieren
-- [ ] Route `/dashboard` für Dashboard-Komponente
-- [ ] Route `/stocks` für Stock-Liste
-- [ ] Route `/stocks/create` für Stock-Formular
-- [ ] Route `/stocks/:id/edit` für Stock-Bearbeitung
-- [ ] Route `/etfs` für ETF-Liste
-- [ ] Route `/etfs/create` für ETF-Formular
-- [ ] Route `/etfs/:id` für ETF-Details und Allocation-Upload
-- [ ] Route `/portfolio` für Portfolio-Verwaltung
-- [ ] Lazy Loading für Feature-Module konfigurieren
+### 6.2 Routing ✅
+- [x] App-Router mit Routes konfiguriert (app.routes.ts)
+- [x] Route `/dashboard` für Dashboard-Komponente
+- [x] Route `/stocks` für Stock-Liste
+- [x] Route `/stocks/create` für Stock-Formular
+- [x] Route `/stocks/:id/edit` für Stock-Bearbeitung
+- [x] Route `/etfs` für ETF-Liste
+- [x] Route `/etfs/create` für ETF-Formular
+- [x] Route `/etfs/:id` für ETF-Details und Allocation-Upload
+- [x] Route `/portfolio` für Portfolio-Verwaltung
+- [x] Lazy Loading mit loadComponent konfiguriert
+- [x] Platzhalter-Komponenten für alle Routes erstellt
 
-### 6.3 API Service Layer
-- [ ] `StockApiService` mit HttpClient für alle Stock-Endpoints erstellen
-- [ ] `EtfApiService` für alle ETF-Endpoints
-- [ ] `PortfolioApiService` für Portfolio-Endpoints
-- [ ] `DashboardApiService` für Dashboard-Endpoints
-- [ ] Error-Interceptor für HTTP-Fehlerbehandlung
-- [ ] Loading-Interceptor für globale Ladeanzeige (optional)
+### 6.3 API Service Layer ✅
+- [x] `StockApiService` mit HttpClient für alle Stock-Endpoints erstellt
+- [x] `EtfApiService` für alle ETF-Endpoints erstellt
+- [x] `PortfolioApiService` für Portfolio-Endpoints erstellt
+- [x] `DashboardApiService` für Dashboard-Endpoints erstellt
+- [x] Error-Interceptor für HTTP-Fehlerbehandlung erstellt
+- [x] Loading-Interceptor für globale Ladeanzeige erstellt
+- [x] LoadingService für Loading-State Management erstellt
 
-### 6.4 State Management
-- [ ] Angular Signals für Stock-State einrichten
-- [ ] Signals für ETF-State
-- [ ] Signals für Portfolio-State
-- [ ] Signals für Dashboard-State
-- [ ] Alternativ: NgRx Store Setup falls komplexere Anforderungen
+### 6.4 TypeScript Models & DTOs ✅
+- [x] Enums erstellt (AssetType, ImporterType)
+- [x] Stock Models & DTOs (Stock, StockRequest, StockResponse)
+- [x] ETF Models & DTOs (ETF, ETFRequest, ETFResponse)
+- [x] Portfolio Models & DTOs (Portfolio, PortfolioPosition, PortfolioWithPositions)
+- [x] Allocation Models (ETFAllocation, AggregatedStockAllocation)
+- [x] Dashboard Models (SectorAllocation, CountryAllocation, PortfolioAnalysis)
+- [x] Page Model für Pagination (Page<T>, PageRequest)
 
-### 6.5 Models & DTOs
-- [ ] TypeScript Interfaces für Stock, ETF, Allocation, Portfolio, PortfolioPosition
-- [ ] DTOs für API-Requests und Responses
-- [ ] Enums für AssetType (STOCK, ETF), ImporterType
+### 6.5 Angular Signals State Management ✅
+- [x] `StockStateService` mit Angular Signals erstellt
+  - Reactive State für Stocks, currentStock, loading, error
+  - Computed Signals für hasStocks
+  - CRUD Methoden mit Signal Updates
+- [x] `EtfStateService` mit Angular Signals erstellt
+  - State für ETFs, currentETF, allocations, allocationHistory
+  - Computed Signals für hasEtfs, hasAllocations
+  - Upload & Allocation Management
+- [x] `PortfolioStateService` mit Angular Signals erstellt
+  - State für Portfolios, currentPortfolio mit Positions
+  - Computed Signals für hasPortfolios, hasPositions
+  - Position Management (add, update, delete)
+- [x] `DashboardStateService` mit Angular Signals erstellt
+  - State für aggregatedAllocations, portfolioAnalysis
+  - Computed Signals für hasAllocations, totalValue, sectorAllocations, countryAllocations
+
+### 6.6 App Configuration ✅
+- [x] app.config.ts mit HTTP Interceptors konfiguriert
+- [x] Error & Loading Interceptors registriert
+- [x] Angular Router mit provideRouter konfiguriert
+- [x] **Angular App kompiliert erfolgreich** ✅
+  - Build erfolgreich: 386.50 kB Initial Bundle
+  - Lazy Loading funktioniert für alle Feature-Komponenten
+
 
 ## Phase 7: Frontend - Shared Components & UI
 
