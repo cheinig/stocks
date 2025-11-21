@@ -1,13 +1,13 @@
 import { Component, Output, EventEmitter, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { IconComponent } from './icon.component';
 
 @Component({
   selector: 'app-file-upload',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressBarModule],
+  imports: [CommonModule, MatButtonModule, IconComponent, MatProgressBarModule],
   template: `
     <div class="upload-container">
       <div
@@ -27,7 +27,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
           style="display: none;">
 
         <div class="upload-content">
-          <mat-icon class="upload-icon">cloud_upload</mat-icon>
+          <mat-icon class="upload-icon" fontIcon="cloud_upload"></mat-icon>
           <p class="upload-text">
             Datei hierher ziehen oder klicken zum Auswählen
           </p>
@@ -43,14 +43,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
       @if (selectedFile()) {
         <div class="file-info">
           <div class="file-details">
-            <mat-icon>insert_drive_file</mat-icon>
+            <mat-icon fontIcon="insert_drive_file"></mat-icon>
             <div class="file-text">
               <p class="file-name">{{ selectedFile()?.name }}</p>
               <p class="file-size">{{ formatFileSize(selectedFile()?.size || 0) }}</p>
             </div>
           </div>
           <button mat-icon-button color="warn" (click)="removeFile()">
-            <mat-icon>close</mat-icon>
+            <mat-icon fontIcon="close"></mat-icon>
           </button>
         </div>
       }
@@ -61,7 +61,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
       @if (uploadError()) {
         <div class="error-message">
-          <mat-icon>error</mat-icon>
+          <mat-icon fontIcon="error"></mat-icon>
           <span>{{ uploadError() }}</span>
         </div>
       }
@@ -69,7 +69,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
       @if (selectedFile() && !uploading()) {
         <div class="upload-actions">
           <button mat-raised-button color="primary" (click)="upload()">
-            <mat-icon>upload</mat-icon>
+            <mat-icon fontIcon="cloud_upload"></mat-icon>
             Hochladen
           </button>
           <button mat-button (click)="removeFile()">

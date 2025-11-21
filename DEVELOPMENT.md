@@ -188,9 +188,16 @@ docker compose up -d postgres
 
 ### Frontend kann Backend nicht erreichen
 
-1. Prüfe ob Backend läuft: http://localhost:8080/actuator/health
-2. Prüfe Browser Console auf CORS-Fehler
-3. Prüfe `ALLOWED_ORIGINS` in Backend application.yml
+**Symptom**: "Http failure during parsing" Fehler im Browser
+
+**Ursache**: Das Backend läuft nicht oder der Angular Dev-Server wurde ohne Proxy-Konfiguration gestartet.
+
+**Lösung**:
+1. Prüfe ob Backend läuft: `curl http://localhost:8080/api/stocks`
+2. Starte Angular Dev-Server neu (damit `proxy.conf.json` geladen wird): `npm start`
+3. Prüfe Browser Console auf CORS-Fehler
+
+**Wichtig**: Das Frontend nutzt einen Proxy (`frontend/proxy.conf.json`), der `/api/*` Anfragen an `http://localhost:8080` weiterleitet. Der Proxy wird nur geladen, wenn der Dev-Server mit `npm start` gestartet wird.
 
 ## Hot Reload
 

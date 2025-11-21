@@ -350,27 +350,56 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
   - Alle Shared Components und Services funktionieren
   - Lazy Loading für Feature-Komponenten aktiv
 
-## Phase 8: Frontend - Stock-Verwaltung
+## Phase 8: Frontend - Stock-Verwaltung ✅
 
-### 8.1 Stock-Liste
-- [ ] `StockListComponent` erstellen
-- [ ] Tabelle mit Spalten: Name, ISIN, Land, Branche, Aktionen
-- [ ] Pagination und Sorting implementieren
-- [ ] Suchfunktion für Name/ISIN
-- [ ] Button zum Erstellen neuer Stocks
-- [ ] Edit- und Delete-Icons pro Row
+### 8.1 Stock-Liste ✅
+- [x] `StockListComponent` erstellt
+- [x] Tabelle mit Spalten: Name, ISIN, Land, Branche, Aktionen
+  - Integration mit DataTableComponent
+  - Country Name Pipe für Länderanzeige
+- [x] Pagination und Sorting implementiert
+  - Page Size: 20, 50, 100
+  - Sortierung nach allen Spalten
+- [x] Suchfunktion für Name/ISIN
+  - Debounced Search (300ms)
+  - Clear-Button
+- [x] Button zum Erstellen neuer Stocks
+- [x] Edit- und Delete-Icons pro Row
+  - Edit navigiert zu Stock-Form
+  - Delete öffnet Confirm Dialog
 
-### 8.2 Stock-Formular
-- [ ] `StockFormComponent` für Erstellen und Bearbeiten
-- [ ] Reactive Form mit Feldern: Name, ISIN, Country (Dropdown), Sector (Dropdown)
-- [ ] ISIN-Validierung
-- [ ] Speichern-Button mit Success/Error-Feedback
-- [ ] Cancel-Button zum Zurückkehren zur Liste
+### 8.2 Stock-Formular ✅
+- [x] `StockFormComponent` für Erstellen und Bearbeiten
+  - Routing für /stocks/create und /stocks/:id/edit
+  - Edit-Modus lädt bestehende Daten
+- [x] Reactive Form mit Feldern: Name, ISIN, Country (Dropdown), Sector (Dropdown)
+  - 22 Länder zur Auswahl
+  - 11 Branchen zur Auswahl
+- [x] ISIN-Validierung
+  - Format-Validierung (2 Buchstaben + 9 Zeichen + 1 Prüfziffer)
+  - Check-Digit Validierung mit Luhn-Algorithmus
+  - Detaillierte Fehlermeldungen
+- [x] Speichern-Button mit Success/Error-Feedback
+  - MatSnackBar für Erfolgsmeldungen
+  - Disabled während Speichervorgang
+- [x] Cancel-Button zum Zurückkehren zur Liste
+  - Back-Arrow Icon in Header
 
-### 8.3 Stock-Löschung
-- [ ] Confirm Dialog vor Löschung anzeigen
-- [ ] Erfolgsmeldung nach Löschung
-- [ ] Automatisches Aktualisieren der Liste
+### 8.3 Stock-Löschung ✅
+- [x] Confirm Dialog vor Löschung anzeigen
+  - Material Dialog mit Stock-Details
+  - Warnung vor Löschung
+- [x] Erfolgsmeldung nach Löschung
+  - MatSnackBar mit Bestätigung
+- [x] Automatisches Aktualisieren der Liste
+  - Liste wird nach Löschung neu geladen
+
+### 8.4 Build & Compilation ✅
+- [x] **Angular App kompiliert erfolgreich** ✅
+  - Build Output: 636.25 kB Initial Bundle
+  - Stock-Liste Lazy Chunk: 115.25 kB
+  - Stock-Form Lazy Chunk: 13.58 kB
+  - Vollständiger CRUD-Flow implementiert
 
 ## Phase 9: Frontend - ETF-Verwaltung
 

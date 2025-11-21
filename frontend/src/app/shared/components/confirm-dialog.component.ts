@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { IconComponent } from './icon.component';
 
 export interface ConfirmDialogData {
   title: string;
@@ -14,10 +14,10 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [MatDialogModule, MatButtonModule, IconComponent],
   template: `
     <h2 mat-dialog-title>
-      <mat-icon class="title-icon">{{ getTitleIcon() }}</mat-icon>
+      <mat-icon class="title-icon" [fontIcon]="getTitleIcon()"></mat-icon>
       {{ data.title }}
     </h2>
     <mat-dialog-content>

@@ -4,7 +4,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { IconComponent } from './icon.component';
 
 export interface TableColumn {
   key: string;
@@ -28,14 +29,15 @@ export interface TableAction<T> {
     MatPaginatorModule,
     MatSortModule,
     MatButtonModule,
-    MatIconModule
+    IconComponent,
+    MatTooltipModule
   ],
   template: `
     <div class="table-container">
       <table mat-table [dataSource]="data" matSort (matSortChange)="onSortChange($event)">
         @for (column of columns; track column.key) {
           <ng-container [matColumnDef]="column.key">
-            <th mat-header-cell *matHeaderCellDef [mat-sort-header]="column.sortable ? column.key : null">
+            <th mat-header-cell *matHeaderCellDef [mat-sort-header]="column.sortable ? column.key : ''">
               {{ column.label }}
             </th>
             <td mat-cell *matCellDef="let row">
@@ -58,7 +60,7 @@ export interface TableAction<T> {
                   [color]="action.color || 'primary'"
                   [matTooltip]="action.tooltip"
                   (click)="action.action(row)">
-                  <mat-icon>{{ action.icon }}</mat-icon>
+                  <mat-icon [fontIcon]="action.icon"></mat-icon>
                 </button>
               }
             </td>

@@ -19,6 +19,49 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #303030;
+  background-color: #1e1e1e;
   color: rgba(255, 255, 255, 0.87);
+}
+
+// Anthrazit background for main content area
+.main-content,
+app-root {
+  background-color: #1e1e1e;
+}
+
+// Cards and surfaces in dark theme
+mat-card,
+.mat-mdc-card {
+  background-color: #2d2d2d !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+// Tables in dark theme
+.table-container {
+  background: #2d2d2d !important;
+}
+
+.mat-mdc-table {
+  background: #2d2d2d !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+.mat-mdc-header-cell {
+  background-color: #252525 !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+.mat-mdc-row:hover {
+  background-color: #383838 !important;
+}
+
+// Form fields in dark theme
+.mat-mdc-form-field {
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+// Dialogs in dark theme
+.mat-mdc-dialog-container {
+  background-color: #2d2d2d !important;
+  color: rgba(255, 255, 255, 0.87) !important;
 }

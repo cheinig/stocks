@@ -1,20 +1,20 @@
 import { Component, Input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from './icon.component';
 
 @Component({
   selector: 'app-error-message',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, IconComponent, MatButtonModule],
   template: `
     <div class="error-container">
-      <mat-icon class="error-icon">error_outline</mat-icon>
+      <mat-icon class="error-icon" fontIcon="error_outline"></mat-icon>
       <h3 class="error-title">{{ title }}</h3>
       <p class="error-message">{{ message }}</p>
       @if (showRetry) {
         <button mat-raised-button color="primary" (click)="onRetry()">
-          <mat-icon>refresh</mat-icon>
+          <mat-icon fontIcon="refresh"></mat-icon>
           Erneut versuchen
         </button>
       }

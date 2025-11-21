@@ -6,6 +6,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../shared/components/icon.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -18,14 +19,14 @@ import { CommonModule } from '@angular/common';
     MatToolbarModule,
     MatSidenavModule,
     MatListModule,
-    MatIconModule,
+    IconComponent,
     MatButtonModule
   ],
   template: `
     <div class="layout-container">
       <mat-toolbar color="primary" class="toolbar">
         <button mat-icon-button (click)="toggleSidenav()">
-          <mat-icon>menu</mat-icon>
+          <mat-icon fontIcon="menu"></mat-icon>
         </button>
         <span class="title">Stock-Status</span>
         <span class="spacer"></span>
@@ -38,19 +39,19 @@ import { CommonModule } from '@angular/common';
           class="sidenav">
           <mat-nav-list>
             <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
-              <mat-icon matListItemIcon>dashboard</mat-icon>
+              <mat-icon matListItemIcon fontIcon="dashboard"></mat-icon>
               <span matListItemTitle>Dashboard</span>
             </a>
             <a mat-list-item routerLink="/stocks" routerLinkActive="active">
-              <mat-icon matListItemIcon>show_chart</mat-icon>
+              <mat-icon matListItemIcon fontIcon="show_chart"></mat-icon>
               <span matListItemTitle>Aktien</span>
             </a>
             <a mat-list-item routerLink="/etfs" routerLinkActive="active">
-              <mat-icon matListItemIcon>assessment</mat-icon>
+              <mat-icon matListItemIcon fontIcon="assessment"></mat-icon>
               <span matListItemTitle>ETFs</span>
             </a>
             <a mat-list-item routerLink="/portfolio" routerLinkActive="active">
-              <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+              <mat-icon matListItemIcon fontIcon="account_balance_wallet"></mat-icon>
               <span matListItemTitle>Portfolio</span>
             </a>
           </mat-nav-list>
@@ -94,10 +95,11 @@ import { CommonModule } from '@angular/common';
     .sidenav {
       width: 250px;
       padding-top: 1rem;
+      background-color: #252525;
     }
 
     .main-content {
-      background-color: #fafafa;
+      background-color: #1e1e1e;
     }
 
     .content-wrapper {
@@ -107,7 +109,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .active {
-      background-color: rgba(0, 0, 0, 0.04);
+      background-color: rgba(255, 255, 255, 0.1);
     }
 
     @media (max-width: 768px) {
