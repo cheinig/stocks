@@ -60,7 +60,7 @@ export class EtfApiService {
   }
 
   getCurrentAllocation(etfId: number): Observable<ETFAllocation[]> {
-    return this.http.get<ETFAllocation[]>(`${this.baseUrl}/${etfId}/allocations/current`);
+    return this.http.get<ETFAllocation[]>(`${this.baseUrl}/${etfId}/allocations`);
   }
 
   getAllocationByVersion(etfId: number, version: number): Observable<ETFAllocation[]> {

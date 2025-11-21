@@ -129,6 +129,24 @@ export class EtfStateService {
     );
   }
 
+  loadAllocation(etfId: number) {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    return this.etfApi.getCurrentAllocation(etfId).pipe(
+      tap({
+        next: (allocations: ETFAllocation[]) => {
+          this._currentAllocations.set(allocations);
+          this._isLoading.set(false);
+        },
+        error: (error) => {
+          this._error.set(error.message || 'Fehler beim Laden der Allokation');
+          this._isLoading.set(false);
+        }
+      })
+    );
+  }
+
   uploadAllocation(etfId: number, file: File) {
     this._isLoading.set(true);
     this._error.set(null);

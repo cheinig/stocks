@@ -31,6 +31,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/etfs/etf-form/etf-form.component').then(m => m.EtfFormComponent)
   },
   {
+    path: 'etfs/:id/edit',
+    loadComponent: () => import('./features/etfs/etf-form/etf-form.component').then(m => m.EtfFormComponent)
+  },
+  {
     path: 'etfs/:id',
     loadComponent: () => import('./features/etfs/etf-details/etf-details.component').then(m => m.EtfDetailsComponent)
   },

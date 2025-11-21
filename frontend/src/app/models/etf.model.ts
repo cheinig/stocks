@@ -1,5 +1,7 @@
 import { ImporterType } from './enums';
 
+export { ImporterType };
+
 export interface ETF {
   id: number;
   name: string;
