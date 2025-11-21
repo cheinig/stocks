@@ -73,51 +73,51 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
 
 ## Phase 3: Backend - Business Logic & Services
 
-### 3.1 Stock Service
-- [ ] `StockService` Interface und Implementation erstellen
-- [ ] CRUD-Methoden implementieren: create, update, delete, findById, findAll
-- [ ] Validation: ISIN-Format prüfen, Duplikate verhindern
-- [ ] Exception-Handling: StockNotFoundException, DuplicateStockException
+### 3.1 Stock Service ✅
+- [x] `StockService` Interface und Implementation erstellen
+- [x] CRUD-Methoden implementieren: create, update, delete, findById, findAll
+- [x] Validation: ISIN-Format prüfen, Duplikate verhindern
+- [x] Exception-Handling: StockNotFoundException, DuplicateStockException
 
-### 3.2 ETF Service
-- [ ] `ETFService` Interface und Implementation erstellen
-- [ ] CRUD-Methoden für ETFs implementieren
-- [ ] Methode zum Abrufen der aktuellen Allocation eines ETFs
-- [ ] Methode zum Abrufen der Historie aller Allocations eines ETFs
+### 3.2 ETF Service ✅
+- [x] `ETFService` Interface und Implementation erstellen
+- [x] CRUD-Methoden für ETFs implementieren
+- [x] Methode zum Abrufen der aktuellen Allocation eines ETFs
+- [x] Methode zum Abrufen der Historie aller Allocations eines ETFs
 
-### 3.3 File Import Service - Abstraktion
-- [ ] `FileImporter` Interface definieren mit Methode: `List<AllocationEntry> parseFile(MultipartFile file)`
-- [ ] `AllocationEntry` DTO erstellen mit Feldern: isin, name, percentage
-- [ ] `ImporterFactory` Service erstellen zur Auswahl des richtigen Importers basierend auf ImporterType
+### 3.3 File Import Service - Abstraktion ✅
+- [x] `FileImporter` Interface definieren mit Methode: `List<AllocationEntry> parseFile(MultipartFile file)`
+- [x] `AllocationEntry` DTO erstellen mit Feldern: isin, name, percentage
+- [x] `ImporterFactory` Service erstellen zur Auswahl des richtigen Importers basierend auf ImporterType
 
-### 3.4 File Import Service - Konkrete Importer
-- [ ] `GenericCSVImporter` implementieren (CSV mit Spalten: ISIN, Name, Percentage)
-- [ ] `GenericExcelImporter` implementieren (Excel mit gleicher Struktur)
-- [ ] Validierung der Import-Daten: ISIN-Format, Percentage-Summe = 100%, keine negativen Werte
-- [ ] Fehlerbehandlung: InvalidFileFormatException, AllocationSumException
+### 3.4 File Import Service - Konkrete Importer ✅
+- [x] `GenericCSVImporter` implementieren (CSV mit Spalten: ISIN, Name, Percentage)
+- [x] `GenericExcelImporter` implementieren (Excel mit gleicher Struktur)
+- [x] Validierung der Import-Daten: ISIN-Format, Percentage-Summe = 100%, keine negativen Werte
+- [x] Fehlerbehandlung: InvalidFileFormatException, AllocationSumException
 
-### 3.5 ETF Allocation Service
-- [ ] `ETFAllocationService` erstellen
-- [ ] Methode zum Speichern einer neuen Allocation-Version aus Import
-- [ ] Automatisches Anlegen fehlender Stocks beim Import (mit Warnung)
-- [ ] Methode zum Abrufen der aktuellen Allocation
-- [ ] Methode zum Löschen alter Allocation-Versionen (Retention-Policy)
+### 3.5 ETF Allocation Service ✅
+- [x] `ETFAllocationService` erstellen
+- [x] Methode zum Speichern einer neuen Allocation-Version aus Import
+- [x] Automatisches Anlegen fehlender Stocks beim Import (mit Warnung)
+- [x] Methode zum Abrufen der aktuellen Allocation
+- [x] Methode zum Löschen alter Allocation-Versionen (Retention-Policy)
 
-### 3.6 Portfolio Service
-- [ ] `PortfolioService` Interface und Implementation erstellen
-- [ ] CRUD-Methoden für Portfolio und Positionen
-- [ ] Methode zur Berechnung der aggregierten Aktienallokation unter Berücksichtigung der ETF-Aufschlüsselung
-- [ ] Methode zur Berechnung der Länderallokation über alle Positionen
-- [ ] Methode zur Ermittlung der Top 20 Aktienwerte im Portfolio
-- [ ] DTO `PortfolioAnalysisDTO` erstellen für aggregierte Ergebnisse
+### 3.6 Portfolio Service ✅
+- [x] `PortfolioService` Interface und Implementation erstellen
+- [x] CRUD-Methoden für Portfolio und Positionen
+- [x] Methode zur Berechnung der aggregierten Aktienallokation unter Berücksichtigung der ETF-Aufschlüsselung
+- [x] Methode zur Berechnung der Länderallokation über alle Positionen
+- [x] Methode zur Ermittlung der Top 20 Aktienwerte im Portfolio
+- [x] DTO `PortfolioAnalysisDTO` erstellen für aggregierte Ergebnisse
 
-### 3.7 Calculation Engine
-- [ ] `PortfolioCalculationService` erstellen
-- [ ] Algorithmus: Alle Portfolio-Positionen durchlaufen
-- [ ] Für Stocks: Direkte Quantity übernehmen
-- [ ] Für ETFs: Quantity * ETF-Allocation-Percentage für jeden Stock berechnen
-- [ ] Aggregation aller Stock-Mengen (gleiche ISIN aufsummieren)
-- [ ] Länder-Gruppierung und Prozentberechnung
+### 3.7 Calculation Engine ✅
+- [x] `PortfolioCalculationService` erstellen
+- [x] Algorithmus: Alle Portfolio-Positionen durchlaufen
+- [x] Für Stocks: Direkte Quantity übernehmen
+- [x] Für ETFs: Quantity * ETF-Allocation-Percentage für jeden Stock berechnen
+- [x] Aggregation aller Stock-Mengen (gleiche ISIN aufsummieren)
+- [x] Länder-Gruppierung und Prozentberechnung
 
 ## Phase 4: Backend - REST API & Controller
 
