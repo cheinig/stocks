@@ -1,0 +1,189 @@
+package com.stockstatus.web;
+
+import com.stockstatus.domain.ETF;
+import com.stockstatus.domain.ETFAllocation;
+import com.stockstatus.dto.ETFAllocationResponseDTO;
+import com.stockstatus.dto.ETFRequestDTO;
+import com.stockstatus.dto.ETFResponseDTO;
+import com.stockstatus.service.ETFService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * REST Controller for ETF operations
+ */
+@RestController
+@RequestMapping("/api/etfs")
+@RequiredArgsConstructor
+@Slf4j
+public class ETFController {
+
+    private final ETFService etfService;
+
+    /**
+     * Create a new ETF
+     * POST /api/etfs
+     */
+    @PostMapping
+    public ResponseEntity<ETFResponseDTO> createETF(@Valid @RequestBody ETFRequestDTO request) {
+        log.info("REST request to create ETF: {}", request.getName());
+
+        ETF etf = ETF.builder()
+            .name(request.getName())
+            .isin(request.getIsin())
+            .importerType(request.getImporterType())
+            .build();
+
+        ETF createdETF = etfService.createETF(etf);
+        ETFResponseDTO response = ETFResponseDTO.fromEntity(createdETF);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Get all ETFs with pagination
+     * GET /api/etfs?page=0&size=20&sort=name,asc
+     */
+    @GetMapping
+    public ResponseEntity<Page<ETFResponseDTO>> getAllETFs(
+        @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        log.debug("REST request to get all ETFs, page: {}", pageable.getPageNumber());
+
+        Page<ETF> etfs = etfService.findAll(pageable);
+        Page<ETFResponseDTO> response = etfs.map(ETFResponseDTO::fromEntity);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get an ETF by ID
+     * GET /api/etfs/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ETFResponseDTO> getETFById(@PathVariable Long id) {
+        log.debug("REST request to get ETF by ID: {}", id);
+
+        ETF etf = etfService.findById(id);
+        ETFResponseDTO response = ETFResponseDTO.fromEntity(etf);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update an ETF
+     * PUT /api/etfs/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ETFResponseDTO> updateETF(
+        @PathVariable Long id,
+        @Valid @RequestBody ETFRequestDTO request
+    ) {
+        log.info("REST request to update ETF ID: {}", id);
+
+        ETF etf = ETF.builder()
+            .name(request.getName())
+            .isin(request.getIsin())
+            .importerType(request.getImporterType())
+            .build();
+
+        ETF updatedETF = etfService.updateETF(id, etf);
+        ETFResponseDTO response = ETFResponseDTO.fromEntity(updatedETF);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Delete an ETF
+     * DELETE /api/etfs/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteETF(@PathVariable Long id) {
+        log.info("REST request to delete ETF ID: {}", id);
+
+        etfService.deleteETF(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get current allocation for an ETF
+     * GET /api/etfs/{id}/allocations
+     */
+    @GetMapping("/{id}/allocations")
+    public ResponseEntity<List<ETFAllocationResponseDTO>> getCurrentAllocation(@PathVariable Long id) {
+        log.debug("REST request to get current allocation for ETF ID: {}", id);
+
+        List<ETFAllocation> allocations = etfService.getCurrentAllocation(id);
+        List<ETFAllocationResponseDTO> response = allocations.stream()
+            .map(ETFAllocationResponseDTO::fromEntity)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get allocation history for an ETF
+     * GET /api/etfs/{id}/allocations/history
+     * Returns a map of version numbers to allocation lists
+     */
+    @GetMapping("/{id}/allocations/history")
+    public ResponseEntity<Map<Integer, List<ETFAllocationResponseDTO>>> getAllocationHistory(@PathVariable Long id) {
+        log.debug("REST request to get allocation history for ETF ID: {}", id);
+
+        Map<Integer, List<ETFAllocation>> history = etfService.getAllocationHistory(id);
+
+        Map<Integer, List<ETFAllocationResponseDTO>> response = history.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().stream()
+                    .map(ETFAllocationResponseDTO::fromEntity)
+                    .collect(Collectors.toList())
+            ));
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get all allocation versions for an ETF
+     * GET /api/etfs/{id}/allocations/versions
+     * Returns a list of version numbers
+     */
+    @GetMapping("/{id}/allocations/versions")
+    public ResponseEntity<List<Integer>> getAllocationVersions(@PathVariable Long id) {
+        log.debug("REST request to get allocation versions for ETF ID: {}", id);
+
+        List<Integer> versions = etfService.getAllocationVersions(id);
+
+        return ResponseEntity.ok(versions);
+    }
+
+    /**
+     * Search ETFs by name or ISIN
+     * GET /api/etfs/search?query=MSCI&page=0&size=20
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<ETFResponseDTO>> searchETFs(
+        @RequestParam String query,
+        @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        log.debug("REST request to search ETFs with query: {}", query);
+
+        Page<ETF> etfs = etfService.searchByNameOrIsin(query, pageable);
+        Page<ETFResponseDTO> response = etfs.map(ETFResponseDTO::fromEntity);
+
+        return ResponseEntity.ok(response);
+    }
+}
