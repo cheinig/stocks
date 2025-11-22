@@ -8,6 +8,7 @@ import com.stockstatus.domain.Stock;
 import com.stockstatus.dto.AggregatedStockAllocation;
 import com.stockstatus.dto.CountryAllocation;
 import com.stockstatus.dto.PortfolioAnalysis;
+import com.stockstatus.dto.SectorAllocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -250,6 +251,36 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
         }
     }
 
+    @Override
+    public List<SectorAllocation> calculateSectorAllocations(Long portfolioId) {
+        log.info("Calculating sector allocations for portfolio ID: {}", portfolioId);
+
+        List<AggregatedStockAllocation> stockAllocations = calculateAggregatedStockAllocations(portfolioId);
+
+        Map<String, SectorAllocationAccumulator> sectorMap = new HashMap<>();
+
+        for (AggregatedStockAllocation allocation : stockAllocations) {
+            String sector = allocation.getSector();
+            SectorAllocationAccumulator accumulator = sectorMap.computeIfAbsent(
+                sector,
+                s -> new SectorAllocationAccumulator(s)
+            );
+            accumulator.addPercentage(allocation.getTotalPercentage());
+        }
+
+        List<SectorAllocation> result = sectorMap.values().stream()
+            .map(accumulator -> SectorAllocation.builder()
+                .sector(accumulator.sector)
+                .percentage(accumulator.totalPercentage.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP).doubleValue())
+                .stockCount(accumulator.stockCount)
+                .build())
+            .sorted(Comparator.comparing(SectorAllocation::getPercentage).reversed())
+            .collect(Collectors.toList());
+
+        log.info("Calculated {} sector allocations for portfolio {}", result.size(), portfolioId);
+        return result;
+    }
+
     /**
      * Helper class to accumulate country allocations
      */
@@ -260,6 +291,24 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
 
         public CountryAllocationAccumulator(String countryCode) {
             this.countryCode = countryCode;
+        }
+
+        public void addPercentage(BigDecimal percentage) {
+            this.totalPercentage = this.totalPercentage.add(percentage);
+            this.stockCount++;
+        }
+    }
+
+    /**
+     * Helper class to accumulate sector allocations
+     */
+    private static class SectorAllocationAccumulator {
+        private final String sector;
+        private BigDecimal totalPercentage = BigDecimal.ZERO;
+        private int stockCount = 0;
+
+        public SectorAllocationAccumulator(String sector) {
+            this.sector = sector;
         }
 
         public void addPercentage(BigDecimal percentage) {

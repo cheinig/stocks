@@ -498,8 +498,15 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
 - [x] Country Stats Grid mit Land-Code, Prozent, Anzahl Aktien
 - [x] provideCharts in app.config.ts registriert
 
-### 11.5 Branchen-Allokation Card (optional)
-- [ ] Ähnlich wie Länder-Allokation für Branchen (nicht implementiert, optional)
+### 11.5 Branchen-Allokation Card ✅
+- [x] Backend: SectorAllocation DTO erstellt
+- [x] Backend: calculateSectorAllocations() Methode implementiert
+- [x] Backend: REST Endpoint GET /api/dashboard/sector-allocation/{portfolioId}
+- [x] Frontend: SectorAllocation Model erstellt
+- [x] Frontend: getSectorAllocation() in DashboardApiService
+- [x] Frontend: Bar Chart für Sektor-Verteilung mit Chart.js
+- [x] Frontend: Sektor Stats Grid mit Sektor-Name, Prozent, Anzahl Aktien
+- [x] Sortierung nach Prozent absteigend
 
 ### 11.6 Auto-Refresh ✅
 - [x] Dashboard-Daten automatisch beim ngOnInit laden
@@ -509,9 +516,9 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
 ### 11.7 Build & Compilation ✅
 - [x] **Angular App kompiliert erfolgreich** ✅
   - Build Output: 938.22 kB Initial Bundle
-  - Dashboard Lazy Chunk: 24.60 kB
+  - Dashboard Lazy Chunk: 26.38 kB (inkl. Sektor-Chart)
   - Chart.js Integration funktioniert
-  - Vollständige Dashboard-Funktionalität implementiert
+  - Vollständige Dashboard-Funktionalität mit Branchen-Allokation implementiert
 
 ## Phase 12: Testing & Quality Assurance
 

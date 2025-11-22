@@ -8,7 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { DashboardApiService } from '../../core/services/dashboard-api.service';
-import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation } from '../../models/dashboard.model';
+import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, SectorAllocation } from '../../models/dashboard.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -151,6 +151,35 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation } from 
                       <span class="country-code">{{ country.countryCode }}</span>
                       <span class="country-percentage">{{ country.percentage | number:'1.2-2' }}%</span>
                       <span class="country-stocks">({{ country.stockCount }} Aktien)</span>
+                    </div>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Sector Allocation Card -->
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>Branchen-Allokation</mat-card-title>
+              <mat-card-subtitle>Verteilung nach Branchen</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (sectorChartData()) {
+                <div class="chart-wrapper">
+                  <canvas
+                    baseChart
+                    [data]="sectorChartData()!"
+                    [type]="sectorChartType"
+                    [options]="sectorChartOptions">
+                  </canvas>
+                </div>
+                <div class="country-stats">
+                  @for (sector of sectorAllocations() || []; track sector.sector) {
+                    <div class="country-item">
+                      <span class="country-code">{{ sector.sector }}</span>
+                      <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
+                      <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
                     </div>
                   }
                 </div>
@@ -382,6 +411,8 @@ export class DashboardComponent implements OnInit {
   error = signal<string | null>(null);
   analysis = signal<PortfolioAnalysis | null>(null);
   pieChartData = signal<ChartData<'pie'> | null>(null);
+  sectorAllocations = signal<SectorAllocation[] | null>(null);
+  sectorChartData = signal<ChartData<'bar'> | null>(null);
 
   displayedColumns = ['rank', 'name', 'isin', 'country', 'sector', 'totalPercentage', 'directPercentage', 'etfPercentage', 'etfCount'];
 
@@ -406,6 +437,40 @@ export class DashboardComponent implements OnInit {
     }
   };
 
+  sectorChartType: ChartType = 'bar';
+  sectorChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const value = context.parsed.y || 0;
+            return `${value.toFixed(2)}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Prozent (%)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Branche'
+        }
+      }
+    }
+  };
+
   ngOnInit(): void {
     this.loadDashboard();
   }
@@ -418,12 +483,25 @@ export class DashboardComponent implements OnInit {
       next: (data) => {
         this.analysis.set(data);
         this.updateChartData(data.countryAllocations);
+        this.loadSectorAllocations();
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error loading dashboard:', err);
         this.error.set('Fehler beim Laden des Dashboards. Bitte versuchen Sie es erneut.');
         this.loading.set(false);
+      }
+    });
+  }
+
+  loadSectorAllocations(): void {
+    this.dashboardApi.getSectorAllocation(this.PORTFOLIO_ID).subscribe({
+      next: (data) => {
+        this.sectorAllocations.set(data);
+        this.updateSectorChartData(data);
+      },
+      error: (err) => {
+        console.error('Error loading sector allocations:', err);
       }
     });
   }
@@ -447,6 +525,28 @@ export class DashboardComponent implements OnInit {
     };
 
     this.pieChartData.set(chartData);
+  }
+
+  updateSectorChartData(sectorAllocations: SectorAllocation[]): void {
+    if (!sectorAllocations || sectorAllocations.length === 0) {
+      this.sectorChartData.set(null);
+      return;
+    }
+
+    const sortedAllocations = [...sectorAllocations].sort((a, b) => b.percentage - a.percentage);
+
+    const chartData: ChartData<'bar'> = {
+      labels: sortedAllocations.map(s => s.sector),
+      datasets: [{
+        label: 'Prozent',
+        data: sortedAllocations.map(s => s.percentage),
+        backgroundColor: this.generateColors(sortedAllocations.length),
+        borderWidth: 1,
+        borderColor: '#1a1a1a'
+      }]
+    };
+
+    this.sectorChartData.set(chartData);
   }
 
   generateColors(count: number): string[] {

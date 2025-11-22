@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import {
   AggregatedStockAllocation,
   CountryAllocation,
-  PortfolioAnalysis
+  PortfolioAnalysis,
+  SectorAllocation
 } from '../../models/dashboard.model';
 
 @Injectable({
@@ -44,5 +45,12 @@ export class DashboardApiService {
    */
   getStockAllocations(portfolioId: number): Observable<AggregatedStockAllocation[]> {
     return this.http.get<AggregatedStockAllocation[]>(`${this.baseUrl}/stock-allocations/${portfolioId}`);
+  }
+
+  /**
+   * Get sector allocation for a portfolio
+   */
+  getSectorAllocation(portfolioId: number): Observable<SectorAllocation[]> {
+    return this.http.get<SectorAllocation[]>(`${this.baseUrl}/sector-allocation/${portfolioId}`);
   }
 }

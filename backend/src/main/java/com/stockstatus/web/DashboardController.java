@@ -3,6 +3,7 @@ package com.stockstatus.web;
 import com.stockstatus.dto.AggregatedStockAllocation;
 import com.stockstatus.dto.CountryAllocation;
 import com.stockstatus.dto.PortfolioAnalysis;
+import com.stockstatus.dto.SectorAllocation;
 import com.stockstatus.service.PortfolioCalculationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,5 +76,18 @@ public class DashboardController {
         List<AggregatedStockAllocation> allocations = calculationService.calculateAggregatedStockAllocations(portfolioId);
 
         return ResponseEntity.ok(allocations);
+    }
+
+    /**
+     * Get sector allocation for a portfolio
+     * GET /api/dashboard/sector-allocation/{portfolioId}
+     */
+    @GetMapping("/sector-allocation/{portfolioId}")
+    public ResponseEntity<List<SectorAllocation>> getSectorAllocation(@PathVariable Long portfolioId) {
+        log.info("REST request to get sector allocation for Portfolio ID: {}", portfolioId);
+
+        List<SectorAllocation> sectorAllocations = calculationService.calculateSectorAllocations(portfolioId);
+
+        return ResponseEntity.ok(sectorAllocations);
     }
 }

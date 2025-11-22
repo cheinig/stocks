@@ -3,6 +3,7 @@ package com.stockstatus.service;
 import com.stockstatus.dto.AggregatedStockAllocation;
 import com.stockstatus.dto.CountryAllocation;
 import com.stockstatus.dto.PortfolioAnalysis;
+import com.stockstatus.dto.SectorAllocation;
 
 import java.util.List;
 
@@ -39,6 +40,16 @@ public interface PortfolioCalculationService {
      * @throws com.stockstatus.exception.ResourceNotFoundException if portfolio not found
      */
     List<CountryAllocation> calculateCountryAllocations(Long portfolioId);
+
+    /**
+     * Calculate sector allocations for a portfolio
+     * Aggregates all stock allocations (direct + through ETFs) by sector
+     *
+     * @param portfolioId the portfolio ID
+     * @return List of sector allocations, sorted by percentage descending
+     * @throws com.stockstatus.exception.ResourceNotFoundException if portfolio not found
+     */
+    List<SectorAllocation> calculateSectorAllocations(Long portfolioId);
 
     /**
      * Get top N stock allocations for a portfolio

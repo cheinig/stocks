@@ -15,6 +15,12 @@ export interface CountryAllocation {
   stockCount: number;
 }
 
+export interface SectorAllocation {
+  sector: string;
+  percentage: number;
+  stockCount: number;
+}
+
 export interface PortfolioAnalysis {
   portfolioId: number;
   portfolioName: string;
