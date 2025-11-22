@@ -1,17 +1,26 @@
-export interface SectorAllocation {
+export interface AggregatedStockAllocation {
+  isin: string;
+  name: string;
+  country: string;
   sector: string;
-  percentage: number;
-  value: number;
+  totalPercentage: number;
+  directPercentage: number;
+  etfPercentage: number;
+  etfCount: number;
 }
 
 export interface CountryAllocation {
-  country: string;
+  countryCode: string;
   percentage: number;
-  value: number;
+  stockCount: number;
 }
 
 export interface PortfolioAnalysis {
-  totalValue: number;
-  sectorAllocations: SectorAllocation[];
+  portfolioId: number;
+  portfolioName: string;
+  allStocks: AggregatedStockAllocation[];
+  top20Stocks: AggregatedStockAllocation[];
   countryAllocations: CountryAllocation[];
+  totalUniqueStocks: number;
+  totalCountries: number;
 }

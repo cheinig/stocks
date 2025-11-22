@@ -471,34 +471,47 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
   - Autocomplete-Suche für Stocks und ETFs
   - Hardcoded Portfolio ID 1 (wie im Backend konfiguriert)
 
-## Phase 11: Frontend - Dashboard
+## Phase 11: Frontend - Dashboard ✅
 
-### 11.1 Dashboard-Layout
-- [ ] `DashboardComponent` erstellen
-- [ ] Grid-Layout mit verschiedenen Cards/Panels
+### 11.1 Dashboard-Layout ✅
+- [x] `DashboardComponent` erstellt
+- [x] Grid-Layout mit verschiedenen Cards/Panels
+- [x] Responsive Layout für mobile und Desktop
 
-### 11.2 Portfolio-Zusammenfassung Card
-- [ ] Card mit Portfolio-Positionen (Anzahl Stocks, ETFs)
-- [ ] Gesamtanzahl unterschiedlicher Stocks nach Aufschlüsselung
-- [ ] Optional: Gesamtwert (falls Preise integriert werden)
+### 11.2 Portfolio-Zusammenfassung Card ✅
+- [x] Card mit Portfolio-Positionen (Anzahl Stocks, ETFs)
+- [x] Gesamtanzahl unterschiedlicher Stocks nach Aufschlüsselung
+- [x] Summary-Stats mit 4 Kennzahlen: Eindeutige Aktien, Länder, Top Positionen, Gesamt Positionen
+- [x] Styled Cards mit Hintergrund und Farbcodierung
 
-### 11.3 Top 20 Stocks Card
-- [ ] Tabelle mit Top 20 Aktienwerten nach Quantity
-- [ ] Spalten: Rank, Name, ISIN, Land, Aggregierte Quantity
-- [ ] Sortierung nach Quantity
+### 11.3 Top 20 Stocks Card ✅
+- [x] Tabelle mit Top 20 Aktienwerten nach Gesamtallokation
+- [x] Spalten: Rank, Name, ISIN, Land, Sektor, Gesamt %, Direkt %, ETF %, ETF Anzahl
+- [x] Sortierung nach totalPercentage
+- [x] Responsive Tabelle mit Scroll-Container
 
-### 11.4 Länder-Allokation Card
-- [ ] Pie Chart oder Bar Chart mit Länder-Verteilung
-- [ ] Chart.js Integration
-- [ ] Prozent-Anzeige pro Land
-- [ ] Legende mit Farben
+### 11.4 Länder-Allokation Card ✅
+- [x] Pie Chart mit Länder-Verteilung implementiert
+- [x] Chart.js Integration über ng2-charts
+- [x] Prozent-Anzeige pro Land
+- [x] Legende mit Farben (12 vordefinierte Farben)
+- [x] Country Stats Grid mit Land-Code, Prozent, Anzahl Aktien
+- [x] provideCharts in app.config.ts registriert
 
 ### 11.5 Branchen-Allokation Card (optional)
-- [ ] Ähnlich wie Länder-Allokation für Branchen
+- [ ] Ähnlich wie Länder-Allokation für Branchen (nicht implementiert, optional)
 
-### 11.6 Auto-Refresh
-- [ ] Dashboard-Daten automatisch aktualisieren beim Navigieren
-- [ ] Refresh-Button zum manuellen Neuladen
+### 11.6 Auto-Refresh ✅
+- [x] Dashboard-Daten automatisch beim ngOnInit laden
+- [x] Refresh-Button zum manuellen Neuladen mit Loading-State
+- [x] Error-Handling mit Retry-Button
+
+### 11.7 Build & Compilation ✅
+- [x] **Angular App kompiliert erfolgreich** ✅
+  - Build Output: 938.22 kB Initial Bundle
+  - Dashboard Lazy Chunk: 24.60 kB
+  - Chart.js Integration funktioniert
+  - Vollständige Dashboard-Funktionalität implementiert
 
 ## Phase 12: Testing & Quality Assurance
 
