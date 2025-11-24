@@ -32,7 +32,12 @@ public enum ImporterType {
     /**
      * Fidelity Excel format
      */
-    FIDELITY("Fidelity Excel", "Fidelity ETF holdings Excel format");
+    FIDELITY("Fidelity Excel", "Fidelity ETF holdings Excel format"),
+
+    /**
+     * Xtrackers Excel format
+     */
+    XTRACKERS("Xtrackers Excel", "Xtrackers ETF holdings Excel format");
 
     private final String displayName;
     private final String description;
