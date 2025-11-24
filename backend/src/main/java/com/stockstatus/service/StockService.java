@@ -60,6 +60,13 @@ public interface StockService {
     Optional<Stock> findByIsin(String isin);
 
     /**
+     * Find a stock by exact name (case-insensitive)
+     * @param name the name to search for
+     * @return Optional containing the stock if found
+     */
+    Optional<Stock> findByName(String name);
+
+    /**
      * Find all stocks with pagination
      * @param pageable pagination information
      * @return Page of stocks

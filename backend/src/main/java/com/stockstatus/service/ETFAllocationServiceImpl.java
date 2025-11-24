@@ -159,20 +159,30 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
     }
 
     /**
-     * Find existing stock by ISIN or create new one
+     * Find existing stock by ISIN or name, or create new one
      * @param entry the allocation entry containing stock information
      * @return the found or created stock
      */
     private Stock findOrCreateStock(AllocationEntry entry) {
-        Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
+        // First try to find by ISIN if available
+        if (entry.getIsin() != null && !entry.getIsin().isEmpty()) {
+            Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
+            if (existingStock.isPresent()) {
+                log.debug("Found existing stock by ISIN: {}", entry.getIsin());
+                return existingStock.get();
+            }
+        }
 
-        if (existingStock.isPresent()) {
-            return existingStock.get();
+        // If no ISIN or not found by ISIN, try to find by name
+        Optional<Stock> stockByName = stockService.findByName(entry.getName());
+        if (stockByName.isPresent()) {
+            log.debug("Found existing stock by name: {}", entry.getName());
+            return stockByName.get();
         }
 
         // Create new stock
-        log.warn("Stock with ISIN {} not found, creating new stock: {}",
-                 entry.getIsin(), entry.getName());
+        log.info("Stock not found, creating new stock: {} (ISIN: {})",
+                 entry.getName(), entry.getIsin() != null ? entry.getIsin() : "N/A");
 
         Stock newStock = Stock.builder()
             .isin(entry.getIsin())

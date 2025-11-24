@@ -69,10 +69,7 @@ import { IconComponent } from '../../../shared/components/icon.component';
                     <mat-error>ISIN ist erforderlich</mat-error>
                   }
                   @if (etfForm.get('isin')?.hasError('isinFormat') && etfForm.get('isin')?.touched) {
-                    <mat-error>Ungültiges ISIN-Format (2 Buchstaben + 9 Zeichen + 1 Prüfziffer)</mat-error>
-                  }
-                  @if (etfForm.get('isin')?.hasError('isinCheckDigit') && etfForm.get('isin')?.touched) {
-                    <mat-error>Ungültige ISIN-Prüfziffer</mat-error>
+                    <mat-error>Ungültiges ISIN-Format (2 Buchstaben + 9 alphanumerische Zeichen + 1 Ziffer)</mat-error>
                   }
                 </mat-form-field>
 
@@ -179,8 +176,11 @@ export class EtfFormComponent implements OnInit {
 
   importerTypes = [
     { value: ImporterType.GENERIC_CSV, label: 'Generic CSV' },
-    { value: ImporterType.ISHARES, label: 'iShares' },
-    { value: ImporterType.VANGUARD, label: 'Vanguard' }
+    { value: ImporterType.GENERIC_EXCEL, label: 'Generic Excel' },
+    { value: ImporterType.ISHARES_CSV, label: 'iShares CSV' },
+    { value: ImporterType.VANGUARD_CSV, label: 'Vanguard CSV' },
+    { value: ImporterType.SPDR_CSV, label: 'SPDR CSV' },
+    { value: ImporterType.FIDELITY, label: 'Fidelity Excel' }
   ];
 
   constructor() {

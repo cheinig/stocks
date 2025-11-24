@@ -1,12 +1,19 @@
 export interface ETFAllocation {
   id: number;
   etfId: number;
+  etfName?: string;
   stockId: number;
-  percentage: number;
-  version: number;
-  uploadedAt: string;
-  stockName?: string;
   stockIsin?: string;
+  stockName?: string;
+  percentage: number;
+  allocationVersion: number;
+  uploadDate: string;
+  // Legacy support
+  stock?: {
+    id: number;
+    isin: string;
+    name: string;
+  };
 }
 
 export interface AggregatedStockAllocation {

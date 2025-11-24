@@ -25,6 +25,14 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findByIsin(String isin);
 
     /**
+     * Find a stock by its exact name (case-insensitive)
+     * @param name the name to search for
+     * @return Optional containing the stock if found
+     */
+    @Query("SELECT s FROM Stock s WHERE LOWER(s.name) = LOWER(:name)")
+    Optional<Stock> findByNameIgnoreCase(@Param("name") String name);
+
+    /**
      * Find all stocks in a specific country
      * @param country ISO 3166-1 alpha-2 country code
      * @return List of stocks in that country

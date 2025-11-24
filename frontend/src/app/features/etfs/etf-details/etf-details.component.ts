@@ -81,7 +81,7 @@ import { IconComponent } from '../../../shared/components/icon.component';
               [acceptedTypes]="'.csv,.xlsx,.xls'"
               [maxSizeInMB]="10"
               (fileSelected)="onFileSelected($event)"
-              (uploadClicked)="onUpload()">
+              (uploadClick)="onUpload()">
             </app-file-upload>
 
             @if (uploadProgress()) {
@@ -114,12 +114,12 @@ import { IconComponent } from '../../../shared/components/icon.component';
                 <table mat-table [dataSource]="etfState.currentAllocations()">
                   <ng-container matColumnDef="stockName">
                     <th mat-header-cell *matHeaderCellDef>Name</th>
-                    <td mat-cell *matCellDef="let allocation">{{ allocation.stock?.name || 'N/A' }}</td>
+                    <td mat-cell *matCellDef="let allocation">{{ allocation.stockName || allocation.stock?.name || 'N/A' }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="stockIsin">
                     <th mat-header-cell *matHeaderCellDef>ISIN</th>
-                    <td mat-cell *matCellDef="let allocation">{{ allocation.stock?.isin || 'N/A' }}</td>
+                    <td mat-cell *matCellDef="let allocation">{{ allocation.stockIsin || allocation.stock?.isin || 'N/A' }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="percentage">

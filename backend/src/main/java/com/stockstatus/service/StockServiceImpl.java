@@ -102,6 +102,12 @@ public class StockServiceImpl implements StockService {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Stock> findByName(String name) {
+        return stockRepository.findByNameIgnoreCase(name);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<Stock> findAll(Pageable pageable) {
         return stockRepository.findAll(pageable);
     }
@@ -154,7 +160,7 @@ public class StockServiceImpl implements StockService {
      * @throws IllegalArgumentException if ISIN format is invalid
      */
     private void validateIsinFormat(String isin) {
-        if (isin == null || !isin.matches("^[A-Z]{2}[A-Z0-9]{9}[0-9]$")) {
+        if (isin == null || !isin.matches("^([A-Z]{2}[A-Z0-9]{9}[0-9]|SONSTIGE[0-9]{5})$")) {
             throw new IllegalArgumentException("Invalid ISIN format: " + isin);
         }
     }

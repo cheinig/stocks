@@ -39,8 +39,9 @@ public class Stock {
     private String name;
 
     @NotBlank(message = "ISIN is required")
-    @Pattern(regexp = "^[A-Z]{2}[A-Z0-9]{9}[0-9]$", message = "ISIN must be a valid format (e.g., US0378331005)")
-    @Column(name = "isin", nullable = false, unique = true, length = 12)
+    @Pattern(regexp = "^([A-Z]{2}[A-Z0-9]{9}[0-9]|SONSTIGE[0-9]{5})$",
+             message = "ISIN must be a valid format (e.g., US0378331005) or SONSTIGE special identifier")
+    @Column(name = "isin", nullable = false, unique = true, length = 13)
     private String isin;
 
     @NotBlank(message = "Country is required")

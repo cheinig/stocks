@@ -23,10 +23,11 @@ import java.math.BigDecimal;
 public class AllocationEntry {
 
     /**
-     * ISIN of the stock
+     * ISIN of the stock (optional for some importers)
+     * Can be empty, standard ISIN format, or special identifier (e.g., SONSTIGE00000)
      */
-    @NotBlank(message = "ISIN is required")
-    @Pattern(regexp = "^[A-Z]{2}[A-Z0-9]{9}[0-9]$", message = "ISIN must be a valid format")
+    @Pattern(regexp = "^$|^([A-Z]{2}[A-Z0-9]{9}[0-9]|SONSTIGE[0-9]{5})$",
+             message = "ISIN must be empty, a valid ISIN format, or special identifier")
     private String isin;
 
     /**

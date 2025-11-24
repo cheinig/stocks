@@ -56,7 +56,7 @@ export class EtfApiService {
   uploadAllocation(etfId: number, file: File): Observable<ETFAllocation[]> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ETFAllocation[]>(`${this.baseUrl}/${etfId}/allocations/upload`, formData);
+    return this.http.post<ETFAllocation[]>(`${this.baseUrl}/${etfId}/upload`, formData);
   }
 
   getCurrentAllocation(etfId: number): Observable<ETFAllocation[]> {

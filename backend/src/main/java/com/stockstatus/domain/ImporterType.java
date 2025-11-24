@@ -27,7 +27,12 @@ public enum ImporterType {
     /**
      * SPDR (State Street) CSV format
      */
-    SPDR_CSV("SPDR CSV", "SPDR/State Street specific CSV format");
+    SPDR_CSV("SPDR CSV", "SPDR/State Street specific CSV format"),
+
+    /**
+     * Fidelity Excel format
+     */
+    FIDELITY("Fidelity Excel", "Fidelity ETF holdings Excel format");
 
     private final String displayName;
     private final String description;

@@ -49,6 +49,12 @@ public class ImportStatisticsDTO {
     private List<String> newStockIsins = new ArrayList<>();
 
     /**
+     * List of newly created stock names
+     */
+    @Builder.Default
+    private List<String> newStockNames = new ArrayList<>();
+
+    /**
      * Number of existing stocks that were found
      */
     private Integer existingStocks;

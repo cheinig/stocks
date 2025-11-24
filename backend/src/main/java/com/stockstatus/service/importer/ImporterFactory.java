@@ -19,6 +19,7 @@ public class ImporterFactory {
 
     private final GenericCSVImporter genericCSVImporter;
     private final GenericExcelImporter genericExcelImporter;
+    private final FidelityExcelImporter fidelityExcelImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -39,6 +40,9 @@ public class ImporterFactory {
             case GENERIC_EXCEL:
                 return genericExcelImporter;
 
+            case FIDELITY:
+                return fidelityExcelImporter;
+
             default:
                 throw new IllegalArgumentException("Unsupported importer type: " + importerType);
         }
@@ -53,7 +57,8 @@ public class ImporterFactory {
     public FileImporter getImporterForFile(MultipartFile file) {
         log.debug("Getting importer for file: {}", file.getOriginalFilename());
 
-        List<FileImporter> importers = List.of(genericCSVImporter, genericExcelImporter);
+        // Check specific importers first (like Fidelity), then fall back to generic ones
+        List<FileImporter> importers = List.of(fidelityExcelImporter, genericCSVImporter, genericExcelImporter);
 
         for (FileImporter importer : importers) {
             if (importer.supports(file)) {
