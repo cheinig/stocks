@@ -8,6 +8,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
+import { isWebImporter } from '../../../models/enums';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
 import { FileUploadComponent } from '../../../shared/components/file-upload.component';
@@ -58,6 +59,12 @@ import { IconComponent } from '../../../shared/components/icon.component';
                 <span class="label">Importer-Typ:</span>
                 <span class="value">{{ etfState.currentEtf()?.importerType }}</span>
               </div>
+              @if (etfState.currentEtf()?.webUrl) {
+                <div class="info-item">
+                  <span class="label">Web URL:</span>
+                  <span class="value">{{ etfState.currentEtf()?.webUrl }}</span>
+                </div>
+              }
             </div>
             <div class="actions">
               <button mat-button color="primary" (click)="editEtf()">
@@ -68,37 +75,75 @@ import { IconComponent } from '../../../shared/components/icon.component';
           </mat-card-content>
         </mat-card>
 
-        <!-- File Upload Card -->
-        <mat-card class="upload-card">
-          <mat-card-header>
-            <mat-card-title>Allocation-Daten hochladen</mat-card-title>
-            <mat-card-subtitle>
-              Laden Sie eine Datei mit der Zusammensetzung des ETFs hoch (CSV oder Excel)
-            </mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <app-file-upload
-              [acceptedTypes]="'.csv,.xlsx,.xls'"
-              [maxSizeInMB]="10"
-              (fileSelected)="onFileSelected($event)"
-              (uploadClick)="onUpload()">
-            </app-file-upload>
-
-            @if (uploadProgress()) {
-              <div class="upload-progress">
-                <mat-icon fontIcon="hourglass_empty"></mat-icon>
-                <span>Upload läuft...</span>
+        <!-- Web Importer Refresh Card -->
+        @if (isWebImporterType()) {
+          <mat-card class="refresh-card">
+            <mat-card-header>
+              <mat-card-title>Holdings aktualisieren</mat-card-title>
+              <mat-card-subtitle>
+                Aktuelle Holdings von der Web-Quelle laden
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="refresh-actions">
+                <button mat-raised-button color="primary" (click)="onRefresh()" [disabled]="uploadProgress()">
+                  <mat-icon fontIcon="refresh"></mat-icon>
+                  @if (uploadProgress()) {
+                    Lädt...
+                  } @else {
+                    Holdings aktualisieren
+                  }
+                </button>
               </div>
-            }
 
-            @if (uploadSuccess()) {
-              <div class="upload-success">
-                <mat-icon fontIcon="check"></mat-icon>
-                <span>{{ uploadSuccess() }}</span>
-              </div>
-            }
-          </mat-card-content>
-        </mat-card>
+              @if (uploadProgress()) {
+                <div class="upload-progress">
+                  <mat-icon fontIcon="hourglass_empty"></mat-icon>
+                  <span>Lade Holdings...</span>
+                </div>
+              }
+
+              @if (uploadSuccess()) {
+                <div class="upload-success">
+                  <mat-icon fontIcon="check"></mat-icon>
+                  <span>{{ uploadSuccess() }}</span>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        } @else {
+          <!-- File Upload Card -->
+          <mat-card class="upload-card">
+            <mat-card-header>
+              <mat-card-title>Allocation-Daten hochladen</mat-card-title>
+              <mat-card-subtitle>
+                Laden Sie eine Datei mit der Zusammensetzung des ETFs hoch (CSV oder Excel)
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-file-upload
+                [acceptedTypes]="'.csv,.xlsx,.xls'"
+                [maxSizeInMB]="10"
+                (fileSelected)="onFileSelected($event)"
+                (uploadClick)="onUpload()">
+              </app-file-upload>
+
+              @if (uploadProgress()) {
+                <div class="upload-progress">
+                  <mat-icon fontIcon="hourglass_empty"></mat-icon>
+                  <span>Upload läuft...</span>
+                </div>
+              }
+
+              @if (uploadSuccess()) {
+                <div class="upload-success">
+                  <mat-icon fontIcon="check"></mat-icon>
+                  <span>{{ uploadSuccess() }}</span>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
 
         <!-- Current Allocation Card -->
         @if (etfState.currentAllocations() && etfState.currentAllocations().length > 0) {
@@ -235,6 +280,16 @@ import { IconComponent } from '../../../shared/components/icon.component';
       border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
+    .refresh-actions {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+
+    .refresh-actions button {
+      min-width: 250px;
+    }
+
     @media (max-width: 768px) {
       .info-grid {
         grid-template-columns: 1fr;
@@ -321,6 +376,32 @@ export class EtfDetailsComponent implements OnInit {
         this.snackBar.open(message, 'OK', { duration: 5000 });
       }
     });
+  }
+
+  onRefresh(): void {
+    if (!this.etfId) return;
+
+    this.uploadProgress.set(true);
+    this.uploadSuccess.set(null);
+
+    this.etfState.refreshWebHoldings(this.etfId).subscribe({
+      next: (response) => {
+        this.uploadProgress.set(false);
+        this.uploadSuccess.set(response.message);
+        this.loadAllocations();
+        this.snackBar.open(response.message, 'OK', { duration: 3000 });
+      },
+      error: (err: any) => {
+        this.uploadProgress.set(false);
+        const message = err?.error?.message || 'Fehler beim Aktualisieren der Holdings';
+        this.snackBar.open(message, 'OK', { duration: 5000 });
+      }
+    });
+  }
+
+  isWebImporterType(): boolean {
+    const etf = this.etfState.currentEtf();
+    return etf?.importerType ? isWebImporter(etf.importerType) : false;
   }
 
   editEtf(): void {

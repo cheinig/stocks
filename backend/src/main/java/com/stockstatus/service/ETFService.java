@@ -145,4 +145,12 @@ public interface ETFService {
      * @return number of ETFs using that importer type
      */
     long countByImporterType(ImporterType importerType);
+
+    /**
+     * Refresh holdings from web source for web-based importers
+     * @param etfId the ETF ID
+     * @throws com.stockstatus.exception.ETFNotFoundException if the ETF is not found
+     * @throws IllegalArgumentException if the ETF is not using a web importer
+     */
+    void refreshWebHoldings(Long etfId);
 }

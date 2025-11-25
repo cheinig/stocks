@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
 import { ETFRequest, ImporterType } from '../../../models/etf.model';
+import { isWebImporter } from '../../../models/enums';
 import { isinValidator } from '../../../shared/validators/isin.validator';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
@@ -87,6 +88,26 @@ import { IconComponent } from '../../../shared/components/icon.component';
                   }
                   <mat-hint>Wählen Sie das Format für den Import der Allocation-Daten</mat-hint>
                 </mat-form-field>
+
+                @if (showWebUrlField()) {
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Web URL</mat-label>
+                    <input matInput formControlName="webUrl" placeholder="z.B. https://www.ishares.com/de/privatanleger/de/produkte/251882/...">
+                    @if (etfForm.get('webUrl')?.hasError('required') && etfForm.get('webUrl')?.touched) {
+                      <mat-error>Web URL ist erforderlich für Web-Importer</mat-error>
+                    }
+                    <mat-hint>Basis-URL für den Web-basierten Import</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Web Data ID</mat-label>
+                    <input matInput formControlName="webDataId" placeholder="z.B. 1478358465952">
+                    @if (etfForm.get('webDataId')?.hasError('required') && etfForm.get('webDataId')?.touched) {
+                      <mat-error>Web Data ID ist erforderlich für Web-Importer</mat-error>
+                    }
+                    <mat-hint>ID für die AJAX-Anfrage (z.B. Timestamp)</mat-hint>
+                  </mat-form-field>
+                }
               </div>
 
               <div class="form-actions">
@@ -182,14 +203,19 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.SPDR_CSV, label: 'SPDR CSV' },
     { value: ImporterType.FIDELITY, label: 'Fidelity Excel' },
     { value: ImporterType.XTRACKERS, label: 'Xtrackers Excel' },
-    { value: ImporterType.VANECK, label: 'VanEck Excel' }
+    { value: ImporterType.VANECK, label: 'VanEck Excel' },
+    { value: ImporterType.ISHARES_WEB, label: 'iShares Web' }
   ];
+
+  showWebUrlField = signal(false);
 
   constructor() {
     this.etfForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       isin: ['', [Validators.required, isinValidator()]],
-      importerType: ['', Validators.required]
+      importerType: ['', Validators.required],
+      webUrl: [''],
+      webDataId: ['']
     });
   }
 
@@ -200,6 +226,26 @@ export class EtfFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.loadEtf();
     }
+
+    // Listen to importerType changes to show/hide webUrl field
+    this.etfForm.get('importerType')?.valueChanges.subscribe(importerType => {
+      const isWeb = importerType && isWebImporter(importerType);
+      this.showWebUrlField.set(isWeb);
+
+      const webUrlControl = this.etfForm.get('webUrl');
+      const webDataIdControl = this.etfForm.get('webDataId');
+      if (isWeb) {
+        webUrlControl?.setValidators([Validators.required]);
+        webDataIdControl?.setValidators([Validators.required]);
+      } else {
+        webUrlControl?.clearValidators();
+        webUrlControl?.setValue('');
+        webDataIdControl?.clearValidators();
+        webDataIdControl?.setValue('');
+      }
+      webUrlControl?.updateValueAndValidity();
+      webDataIdControl?.updateValueAndValidity();
+    });
   }
 
   loadEtf(): void {
@@ -212,8 +258,21 @@ export class EtfFormComponent implements OnInit {
           this.etfForm.patchValue({
             name: etf.name,
             isin: etf.isin,
-            importerType: etf.importerType
+            importerType: etf.importerType,
+            webUrl: etf.webUrl || '',
+            webDataId: etf.webDataId || ''
           });
+          // Trigger visibility check and validation for webUrl and webDataId fields
+          if (etf.importerType && isWebImporter(etf.importerType)) {
+            this.showWebUrlField.set(true);
+            // Set validators for web importer fields
+            const webUrlControl = this.etfForm.get('webUrl');
+            const webDataIdControl = this.etfForm.get('webDataId');
+            webUrlControl?.setValidators([Validators.required]);
+            webDataIdControl?.setValidators([Validators.required]);
+            webUrlControl?.updateValueAndValidity();
+            webDataIdControl?.updateValueAndValidity();
+          }
         }
       },
       error: () => {

@@ -70,4 +70,8 @@ export class EtfApiService {
   getAllocationHistory(etfId: number): Observable<Record<number, ETFAllocation[]>> {
     return this.http.get<Record<number, ETFAllocation[]>>(`${this.baseUrl}/${etfId}/allocations/history`);
   }
+
+  refreshWebHoldings(etfId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/${etfId}/refresh`, {});
+  }
 }

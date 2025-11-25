@@ -11,5 +11,10 @@ export enum ImporterType {
   SPDR_CSV = 'SPDR_CSV',
   FIDELITY = 'FIDELITY',
   XTRACKERS = 'XTRACKERS',
-  VANECK = 'VANECK'
+  VANECK = 'VANECK',
+  ISHARES_WEB = 'ISHARES_WEB'
+}
+
+export function isWebImporter(importerType: ImporterType): boolean {
+  return importerType === ImporterType.ISHARES_WEB;
 }

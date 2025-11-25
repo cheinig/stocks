@@ -22,6 +22,8 @@ public class ETFResponseDTO {
     private String name;
     private String isin;
     private ImporterType importerType;
+    private String webUrl;
+    private String webDataId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -34,6 +36,8 @@ public class ETFResponseDTO {
             .name(etf.getName())
             .isin(etf.getIsin())
             .importerType(etf.getImporterType())
+            .webUrl(etf.getWebUrl())
+            .webDataId(etf.getWebDataId())
             .createdAt(etf.getCreatedAt())
             .updatedAt(etf.getUpdatedAt())
             .build();
@@ -48,6 +52,8 @@ public class ETFResponseDTO {
             .name(this.name)
             .isin(this.isin)
             .importerType(this.importerType)
+            .webUrl(this.webUrl)
+            .webDataId(this.webDataId)
             .build();
     }
 }

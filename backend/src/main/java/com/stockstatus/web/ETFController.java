@@ -44,6 +44,8 @@ public class ETFController {
             .name(request.getName())
             .isin(request.getIsin())
             .importerType(request.getImporterType())
+            .webUrl(request.getWebUrl())
+            .webDataId(request.getWebDataId())
             .build();
 
         ETF createdETF = etfService.createETF(etf);
@@ -97,6 +99,8 @@ public class ETFController {
             .name(request.getName())
             .isin(request.getIsin())
             .importerType(request.getImporterType())
+            .webUrl(request.getWebUrl())
+            .webDataId(request.getWebDataId())
             .build();
 
         ETF updatedETF = etfService.updateETF(id, etf);
@@ -185,5 +189,35 @@ public class ETFController {
         Page<ETFResponseDTO> response = etfs.map(ETFResponseDTO::fromEntity);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Refresh holdings from web source for web-based importers
+     * POST /api/etfs/{id}/refresh
+     */
+    @PostMapping("/{id}/refresh")
+    public ResponseEntity<Map<String, Object>> refreshWebHoldings(@PathVariable Long id) {
+        log.info("REST request to refresh web holdings for ETF ID: {}", id);
+
+        try {
+            etfService.refreshWebHoldings(id);
+
+            Map<String, Object> response = Map.of(
+                "success", true,
+                "message", "Holdings successfully refreshed from web source"
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error refreshing web holdings for ETF ID: {}", id, e);
+
+            Map<String, Object> errorResponse = Map.of(
+                "success", false,
+                "message", "Failed to refresh holdings: " + e.getMessage()
+            );
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }

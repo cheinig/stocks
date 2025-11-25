@@ -29,4 +29,10 @@ public class ETFRequestDTO {
 
     @NotNull(message = "Importer type is required")
     private ImporterType importerType;
+
+    @Size(max = 500, message = "Web URL must not exceed 500 characters")
+    private String webUrl;
+
+    @Size(max = 100, message = "Web Data ID must not exceed 100 characters")
+    private String webDataId;
 }

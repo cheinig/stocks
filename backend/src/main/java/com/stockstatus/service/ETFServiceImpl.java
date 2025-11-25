@@ -3,6 +3,8 @@ package com.stockstatus.service;
 import com.stockstatus.domain.ETF;
 import com.stockstatus.domain.ETFAllocation;
 import com.stockstatus.domain.ImporterType;
+import com.stockstatus.domain.Stock;
+import com.stockstatus.dto.AllocationEntry;
 import com.stockstatus.exception.DuplicateETFException;
 import com.stockstatus.exception.ETFNotFoundException;
 import com.stockstatus.repository.ETFAllocationRepository;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,8 @@ public class ETFServiceImpl implements ETFService {
 
     private final ETFRepository etfRepository;
     private final ETFAllocationRepository etfAllocationRepository;
+    private final StockService stockService;
+    private final com.stockstatus.service.importer.ImporterFactory importerFactory;
 
     @Override
     public ETF createETF(ETF etf) {
@@ -69,6 +74,8 @@ public class ETFServiceImpl implements ETFService {
         existingETF.setName(etf.getName());
         existingETF.setIsin(etf.getIsin());
         existingETF.setImporterType(etf.getImporterType());
+        existingETF.setWebUrl(etf.getWebUrl());
+        existingETF.setWebDataId(etf.getWebDataId());
 
         ETF updatedETF = etfRepository.save(existingETF);
         log.info("Updated ETF with ID: {}", updatedETF.getId());
@@ -210,6 +217,135 @@ public class ETFServiceImpl implements ETFService {
     @Transactional(readOnly = true)
     public long countByImporterType(ImporterType importerType) {
         return etfRepository.countByImporterType(importerType);
+    }
+
+    @Override
+    public void refreshWebHoldings(Long etfId) {
+        log.info("Refreshing web holdings for ETF ID: {}", etfId);
+
+        // Get the ETF
+        ETF etf = findById(etfId);
+
+        // Verify it's a web importer
+        if (!etf.getImporterType().isWebImporter()) {
+            throw new IllegalArgumentException(
+                "ETF with ID " + etfId + " is not using a web importer. Importer type: " + etf.getImporterType()
+            );
+        }
+
+        // Verify webUrl is configured
+        if (etf.getWebUrl() == null || etf.getWebUrl().isEmpty()) {
+            throw new IllegalArgumentException(
+                "ETF with ID " + etfId + " does not have a web URL configured"
+            );
+        }
+
+        // Verify webDataId is configured
+        if (etf.getWebDataId() == null || etf.getWebDataId().isEmpty()) {
+            throw new IllegalArgumentException(
+                "ETF with ID " + etfId + " does not have a web data ID configured"
+            );
+        }
+
+        // Get the appropriate web importer
+        com.stockstatus.service.importer.WebImporter webImporter = importerFactory.getWebImporter(etf.getImporterType());
+
+        // Fetch and parse holdings from web
+        log.debug("Fetching holdings from URL: {} with dataId: {}", etf.getWebUrl(), etf.getWebDataId());
+
+        List<AllocationEntry> allocationEntries;
+
+        // Cast to ISharesWebImporter to use the overloaded method
+        if (webImporter instanceof com.stockstatus.service.importer.ISharesWebImporter) {
+            com.stockstatus.service.importer.ISharesWebImporter iSharesImporter =
+                (com.stockstatus.service.importer.ISharesWebImporter) webImporter;
+            allocationEntries = iSharesImporter.fetchAndParse(etf.getWebUrl(), etf.getWebDataId());
+        } else {
+            allocationEntries = webImporter.fetchAndParse(etf.getWebUrl());
+        }
+
+        log.info("Fetched {} allocation entries from web source", allocationEntries.size());
+
+        // Determine the next allocation version
+        List<Integer> existingVersions = etfAllocationRepository.findAllVersionsByEtfId(etfId);
+        int nextVersion = existingVersions.isEmpty() ? 1 : existingVersions.get(0) + 1;
+        log.debug("Creating new allocation version: {}", nextVersion);
+
+        // Process each allocation entry
+        List<ETFAllocation> allocations = new ArrayList<>();
+
+        for (AllocationEntry entry : allocationEntries) {
+            // Find or create stock
+            Stock stock = findOrCreateStock(entry);
+
+            // Create ETF allocation
+            ETFAllocation allocation = ETFAllocation.builder()
+                .etf(etf)
+                .stock(stock)
+                .percentage(entry.getPercentage())
+                .allocationVersion(nextVersion)
+                .build();
+
+            allocations.add(allocation);
+        }
+
+        // Save all allocations
+        etfAllocationRepository.saveAll(allocations);
+
+        log.info("Successfully saved {} allocations as version {} for ETF ID: {}",
+            allocations.size(), nextVersion, etfId);
+    }
+
+    /**
+     * Find an existing stock by ISIN or create a new one
+     * @param entry the allocation entry containing stock information
+     * @return the found or created stock
+     */
+    private Stock findOrCreateStock(AllocationEntry entry) {
+        // Check if ISIN is valid (not null, not empty, not just a dash or placeholder)
+        boolean hasValidIsin = entry.getIsin() != null
+            && !entry.getIsin().isEmpty()
+            && !entry.getIsin().equals("-")
+            && entry.getIsin().matches("^[A-Z]{2}[A-Z0-9]{9}[0-9]$");
+
+        // First try to find by ISIN if it's valid
+        if (hasValidIsin) {
+            Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
+            if (existingStock.isPresent()) {
+                log.debug("Found existing stock by ISIN: {}", entry.getIsin());
+                return existingStock.get();
+            }
+        }
+
+        // If not found by ISIN, try to find by name
+        Optional<Stock> existingStockByName = stockService.findByName(entry.getName());
+        if (existingStockByName.isPresent()) {
+            log.debug("Found existing stock by name: {}", entry.getName());
+            return existingStockByName.get();
+        }
+
+        // Create new stock
+        String isinToUse = hasValidIsin ? entry.getIsin() : generatePlaceholderIsin();
+        log.debug("Creating new stock: {} (ISIN: {})", entry.getName(), isinToUse);
+
+        Stock newStock = Stock.builder()
+            .name(entry.getName())
+            .isin(isinToUse)
+            .country(entry.getCountry() != null ? entry.getCountry() : "XX")
+            .sector(entry.getSector())
+            .build();
+
+        return stockService.createStock(newStock);
+    }
+
+    /**
+     * Generate a placeholder ISIN for stocks without a valid ISIN
+     * Uses the SONSTIGE prefix with a random number
+     */
+    private String generatePlaceholderIsin() {
+        // Generate a random 5-digit number
+        int randomNumber = (int) (Math.random() * 100000);
+        return String.format("SONSTIGE%05d", randomNumber);
     }
 
     /**

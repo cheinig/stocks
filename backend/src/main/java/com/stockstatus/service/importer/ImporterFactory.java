@@ -22,6 +22,7 @@ public class ImporterFactory {
     private final FidelityExcelImporter fidelityExcelImporter;
     private final XtrackersExcelImporter xtrackersExcelImporter;
     private final VanEckExcelImporter vanEckExcelImporter;
+    private final ISharesWebImporter iSharesWebImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -96,5 +97,21 @@ public class ImporterFactory {
                 "File format is not compatible with " + importerType.getDisplayName()
             );
         }
+    }
+
+    /**
+     * Get the appropriate web importer for the given ImporterType
+     * @param importerType the type of importer to use
+     * @return the web importer
+     * @throws IllegalArgumentException if the importer type is not a web importer
+     */
+    public WebImporter getWebImporter(ImporterType importerType) {
+        log.debug("Getting web importer for type: {}", importerType);
+
+        if (importerType == ImporterType.ISHARES_WEB) {
+            return iSharesWebImporter;
+        }
+
+        throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
     }
 }

@@ -47,6 +47,14 @@ public class ETF {
     @Column(name = "importer_type", nullable = false, length = 50)
     private ImporterType importerType;
 
+    @Size(max = 500, message = "Web URL must not exceed 500 characters")
+    @Column(name = "web_url", length = 500)
+    private String webUrl;
+
+    @Size(max = 100, message = "Web Data ID must not exceed 100 characters")
+    @Column(name = "web_data_id", length = 100)
+    private String webDataId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -42,7 +42,12 @@ public enum ImporterType {
     /**
      * VanEck Excel format
      */
-    VANECK("VanEck Excel", "VanEck ETF holdings Excel format");
+    VANECK("VanEck Excel", "VanEck ETF holdings Excel format"),
+
+    /**
+     * iShares Web importer - fetches holdings from iShares website
+     */
+    ISHARES_WEB("iShares Web", "iShares ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -58,5 +63,13 @@ public enum ImporterType {
 
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * Check if this importer type is a web-based importer
+     * @return true if this is a web importer
+     */
+    public boolean isWebImporter() {
+        return this == ISHARES_WEB;
     }
 }

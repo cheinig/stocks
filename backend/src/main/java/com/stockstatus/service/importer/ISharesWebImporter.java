@@ -1,0 +1,233 @@
+package com.stockstatus.service.importer;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stockstatus.dto.AllocationEntry;
+import com.stockstatus.exception.InvalidFileFormatException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Importer for iShares ETF holdings from web source
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ISharesWebImporter implements WebImporter {
+
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+
+    @Override
+    public List<AllocationEntry> fetchAndParse(String webUrl) {
+        log.info("Starting iShares web import from URL: {}", webUrl);
+
+        throw new UnsupportedOperationException(
+            "iShares Web Importer requires webUrl and webDataId. " +
+            "Use fetchAndParse(String webUrl, String webDataId) instead.");
+    }
+
+    /**
+     * Fetch and parse holdings data using webUrl and webDataId
+     * @param webUrl Base URL (e.g., https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund)
+     * @param webDataId Data ID for AJAX call (e.g., 1478358465952)
+     * @return List of allocation entries
+     */
+    public List<AllocationEntry> fetchAndParse(String webUrl, String webDataId) {
+        log.info("Starting iShares web import from URL: {} with dataId: {}", webUrl, webDataId);
+
+        try {
+            // Build JSON API URL: {webUrl}/{webDataId}.ajax?tab=all&fileType=json
+            String cleanWebUrl = webUrl.endsWith("/") ? webUrl.substring(0, webUrl.length() - 1) : webUrl;
+            String jsonUrl = cleanWebUrl + "/" + webDataId + ".ajax?tab=all&fileType=json";
+
+            log.info("Fetching JSON data from: {}", jsonUrl);
+
+            // Fetch the JSON data
+            String jsonResponse = restTemplate.getForObject(jsonUrl, String.class);
+
+            if (jsonResponse == null || jsonResponse.isEmpty()) {
+                throw new InvalidFileFormatException("iShares Web",
+                    "Received empty response from JSON endpoint: " + jsonUrl);
+            }
+
+            log.info("Successfully fetched JSON data (size: {} bytes)", jsonResponse.length());
+            log.debug("JSON response preview: {}",
+                jsonResponse.length() > 200 ? jsonResponse.substring(0, 200) + "..." : jsonResponse);
+
+            // Remove BOM (Byte Order Mark) if present
+            if (jsonResponse.startsWith("\uFEFF")) {
+                jsonResponse = jsonResponse.substring(1);
+                log.debug("Removed BOM character from JSON response");
+            }
+
+            // Parse JSON data
+            return parseJsonResponse(jsonResponse);
+
+        } catch (InvalidFileFormatException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to fetch data from URL: {} with dataId: {}", webUrl, webDataId, e);
+            throw new InvalidFileFormatException("iShares Web",
+                "Failed to fetch data. Error: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Parse JSON response from iShares API
+     * Expected structure:
+     * {
+     *   "aaData": [
+     *     [
+     *       "Ticker",           // 0
+     *       "Name",             // 1
+     *       "Sector",           // 2
+     *       "Asset Class",      // 3
+     *       {...},              // 4 - Market Value
+     *       {"raw": 2.09},      // 5 - Weight (%)
+     *       {...},              // 6 - Nominal Value
+     *       {...},              // 7 - Nominal
+     *       "ISIN",             // 8
+     *       {...},              // 9 - Price
+     *       "Location",         // 10
+     *       "Exchange",         // 11
+     *       "Currency"          // 12
+     *     ]
+     *   ]
+     * }
+     */
+    private List<AllocationEntry> parseJsonResponse(String jsonResponse) {
+        try {
+            log.debug("Parsing JSON response");
+
+            JsonNode root = objectMapper.readTree(jsonResponse);
+            JsonNode aaData = root.get("aaData");
+
+            if (aaData == null || !aaData.isArray()) {
+                throw new InvalidFileFormatException("iShares Web",
+                    "Invalid JSON structure: 'aaData' array not found");
+            }
+
+            List<AllocationEntry> entries = new ArrayList<>();
+            int rowNumber = 0;
+
+            for (JsonNode row : aaData) {
+                rowNumber++;
+
+                if (!row.isArray() || row.size() < 13) {
+                    log.warn("Skipping row {} - invalid structure or insufficient data (expected 13 elements, got {})",
+                        rowNumber, row.size());
+                    continue;
+                }
+
+                try {
+                    // Extract data from the array
+                    // Index 1: Name
+                    String name = row.get(1).asText();
+
+                    // Index 2: Sector
+                    String sector = row.get(2).asText();
+
+                    // Index 5: Weight - get "raw" value from the object
+                    JsonNode weightNode = row.get(5);
+                    BigDecimal percentage = null;
+                    if (weightNode.isObject() && weightNode.has("raw")) {
+                        percentage = new BigDecimal(weightNode.get("raw").asText());
+                    } else if (weightNode.isNumber()) {
+                        percentage = new BigDecimal(weightNode.asDouble());
+                    }
+
+                    // Index 8: ISIN
+                    String isin = row.get(8).asText();
+
+                    // Index 10: Location (Country)
+                    String location = row.get(10).asText();
+
+                    // Validate required fields
+                    if (name == null || name.trim().isEmpty()) {
+                        log.warn("Skipping row {} - missing name", rowNumber);
+                        continue;
+                    }
+
+                    if (percentage == null || percentage.compareTo(BigDecimal.ZERO) <= 0) {
+                        log.warn("Skipping row {} - invalid percentage: {}", rowNumber, percentage);
+                        continue;
+                    }
+
+                    // Build the allocation entry
+                    AllocationEntry entry = AllocationEntry.builder()
+                        .name(name.trim())
+                        .isin(isin != null && !isin.trim().isEmpty() ? isin.trim() : "")
+                        .percentage(percentage)
+                        .sector(sector != null && !sector.trim().isEmpty() ? sector.trim() : null)
+                        .country(location != null && !location.trim().isEmpty() ? mapCountryNameToCode(location.trim()) : null)
+                        .build();
+
+                    entries.add(entry);
+                    log.debug("Parsed row {}: {} - {}%", rowNumber, name, percentage);
+
+                } catch (Exception e) {
+                    log.warn("Error parsing row {}: {}", rowNumber, e.getMessage());
+                    continue;
+                }
+            }
+
+            if (entries.isEmpty()) {
+                throw new InvalidFileFormatException("iShares Web",
+                    "No valid allocation entries found in JSON data");
+            }
+
+            log.info("Successfully parsed {} allocation entries from JSON", entries.size());
+            return entries;
+
+        } catch (InvalidFileFormatException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to parse JSON response", e);
+            throw new InvalidFileFormatException("iShares Web",
+                "Failed to parse JSON data: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Map country name to ISO 3166-1 alpha-2 code
+     * This is a simplified mapping - can be extended as needed
+     */
+    private String mapCountryNameToCode(String countryName) {
+        // Simple mapping for common countries
+        return switch (countryName.toLowerCase()) {
+            case "deutschland", "germany" -> "DE";
+            case "vereinigte staaten", "united states", "usa" -> "US";
+            case "vereinigtes königreich", "united kingdom", "uk" -> "GB";
+            case "frankreich", "france" -> "FR";
+            case "schweiz", "switzerland" -> "CH";
+            case "niederlande", "netherlands" -> "NL";
+            case "spanien", "spain" -> "ES";
+            case "italien", "italy" -> "IT";
+            case "japan" -> "JP";
+            case "china" -> "CN";
+            case "hongkong", "hong kong" -> "HK";
+            case "australien", "australia" -> "AU";
+            case "kanada", "canada" -> "CA";
+            case "indien", "india" -> "IN";
+            case "südkorea", "south korea" -> "KR";
+            case "taiwan" -> "TW";
+            case "brasilien", "brazil" -> "BR";
+            case "mexiko", "mexico" -> "MX";
+            case "singapur", "singapore" -> "SG";
+            default -> null; // Return null for unmapped countries
+        };
+    }
+
+    @Override
+    public String getImporterName() {
+        return "iShares Web";
+    }
+}

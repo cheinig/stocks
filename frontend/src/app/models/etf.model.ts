@@ -7,6 +7,8 @@ export interface ETF {
   name: string;
   isin: string;
   importerType: ImporterType;
+  webUrl?: string;
+  webDataId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -15,6 +17,8 @@ export interface ETFRequest {
   name: string;
   isin: string;
   importerType: ImporterType;
+  webUrl?: string;
+  webDataId?: string;
 }
 
 export interface ETFResponse {
@@ -22,6 +26,8 @@ export interface ETFResponse {
   name: string;
   isin: string;
   importerType: ImporterType;
+  webUrl?: string;
+  webDataId?: string;
   createdAt: string;
   updatedAt: string;
 }

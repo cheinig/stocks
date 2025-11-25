@@ -225,6 +225,27 @@ export class EtfStateService {
     this._currentAllocations.set([]);
   }
 
+  refreshWebHoldings(etfId: number) {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    return this.etfApi.refreshWebHoldings(etfId).pipe(
+      tap({
+        next: (response: { success: boolean; message: string }) => {
+          this._isLoading.set(false);
+          // Reload allocations after successful refresh
+          if (response.success) {
+            this.loadCurrentAllocation(etfId).subscribe();
+          }
+        },
+        error: (error) => {
+          this._error.set(error.message || 'Fehler beim Aktualisieren der Holdings');
+          this._isLoading.set(false);
+        }
+      })
+    );
+  }
+
   clearError() {
     this._error.set(null);
   }
