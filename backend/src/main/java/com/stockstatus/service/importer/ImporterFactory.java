@@ -21,6 +21,7 @@ public class ImporterFactory {
     private final GenericExcelImporter genericExcelImporter;
     private final FidelityExcelImporter fidelityExcelImporter;
     private final XtrackersExcelImporter xtrackersExcelImporter;
+    private final VanEckExcelImporter vanEckExcelImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -47,6 +48,9 @@ public class ImporterFactory {
             case XTRACKERS:
                 return xtrackersExcelImporter;
 
+            case VANECK:
+                return vanEckExcelImporter;
+
             default:
                 throw new IllegalArgumentException("Unsupported importer type: " + importerType);
         }
@@ -61,8 +65,8 @@ public class ImporterFactory {
     public FileImporter getImporterForFile(MultipartFile file) {
         log.debug("Getting importer for file: {}", file.getOriginalFilename());
 
-        // Check specific importers first (like Fidelity, Xtrackers), then fall back to generic ones
-        List<FileImporter> importers = List.of(fidelityExcelImporter, xtrackersExcelImporter, genericCSVImporter, genericExcelImporter);
+        // Check specific importers first (like Fidelity, Xtrackers, VanEck), then fall back to generic ones
+        List<FileImporter> importers = List.of(fidelityExcelImporter, xtrackersExcelImporter, vanEckExcelImporter, genericCSVImporter, genericExcelImporter);
 
         for (FileImporter importer : importers) {
             if (importer.supports(file)) {

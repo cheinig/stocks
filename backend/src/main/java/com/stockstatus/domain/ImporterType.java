@@ -37,7 +37,12 @@ public enum ImporterType {
     /**
      * Xtrackers Excel format
      */
-    XTRACKERS("Xtrackers Excel", "Xtrackers ETF holdings Excel format");
+    XTRACKERS("Xtrackers Excel", "Xtrackers ETF holdings Excel format"),
+
+    /**
+     * VanEck Excel format
+     */
+    VANECK("VanEck Excel", "VanEck ETF holdings Excel format");
 
     private final String displayName;
     private final String description;

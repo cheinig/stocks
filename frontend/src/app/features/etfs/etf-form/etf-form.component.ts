@@ -181,7 +181,8 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.VANGUARD_CSV, label: 'Vanguard CSV' },
     { value: ImporterType.SPDR_CSV, label: 'SPDR CSV' },
     { value: ImporterType.FIDELITY, label: 'Fidelity Excel' },
-    { value: ImporterType.XTRACKERS, label: 'Xtrackers Excel' }
+    { value: ImporterType.XTRACKERS, label: 'Xtrackers Excel' },
+    { value: ImporterType.VANECK, label: 'VanEck Excel' }
   ];
 
   constructor() {
