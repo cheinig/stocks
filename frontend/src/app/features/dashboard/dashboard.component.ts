@@ -148,6 +148,7 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
                 <div class="country-stats">
                   @for (country of analysis()?.countryAllocations || []; track country.countryCode) {
                     <div class="country-item">
+                      <span class="country-flag">{{ getCountryFlag(country.countryCode) }}</span>
                       <span class="country-code">{{ country.countryCode }}</span>
                       <span class="country-percentage">{{ country.percentage | number:'1.2-2' }}%</span>
                       <span class="country-stocks">({{ country.stockCount }} Aktien)</span>
@@ -251,6 +252,12 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
 
     .chart-card {
       grid-column: 1 / -1;
+      min-height: 600px;
+    }
+
+    .chart-card mat-card-content {
+      overflow: visible;
+      padding-bottom: 1.5rem;
     }
 
     @media (min-width: 1200px) {
@@ -320,9 +327,11 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
 
     .country-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 0.75rem;
       margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      overflow: visible;
     }
 
     .country-item {
@@ -332,6 +341,11 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
       padding: 0.75rem;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 4px;
+    }
+
+    .country-flag {
+      font-size: 1.5rem;
+      margin-right: 0.25rem;
     }
 
     .country-code {
@@ -419,7 +433,7 @@ export class DashboardComponent implements OnInit {
   pieChartType: ChartType = 'pie';
   pieChartOptions: ChartConfiguration['options'] = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: true,
@@ -440,7 +454,7 @@ export class DashboardComponent implements OnInit {
   sectorChartType: ChartType = 'bar';
   sectorChartOptions: ChartConfiguration['options'] = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -514,11 +528,32 @@ export class DashboardComponent implements OnInit {
 
     const sortedAllocations = [...countryAllocations].sort((a, b) => b.percentage - a.percentage);
 
+    // Länder mit mindestens 0,3% Gewichtung einzeln anzeigen, Rest als "Sonstige"
+    const minPercentageThreshold = 0.3;
+
+    const significantAllocations = sortedAllocations.filter(c => c.percentage >= minPercentageThreshold);
+    const insignificantAllocations = sortedAllocations.filter(c => c.percentage < minPercentageThreshold);
+
+    let labels: string[];
+    let data: number[];
+
+    if (insignificantAllocations.length === 0) {
+      // Alle Länder haben >= 0,3% - alle einzeln anzeigen
+      labels = significantAllocations.map(c => c.countryCode);
+      data = significantAllocations.map(c => c.percentage);
+    } else {
+      // Einige Länder haben < 0,3% - diese zu "Sonstige" zusammenfassen
+      const othersPercentage = insignificantAllocations.reduce((sum, c) => sum + c.percentage, 0);
+
+      labels = [...significantAllocations.map(c => c.countryCode), 'Sonstige'];
+      data = [...significantAllocations.map(c => c.percentage), othersPercentage];
+    }
+
     const chartData: ChartData<'pie'> = {
-      labels: sortedAllocations.map(c => c.countryCode),
+      labels: labels,
       datasets: [{
-        data: sortedAllocations.map(c => c.percentage),
-        backgroundColor: this.generateColors(sortedAllocations.length),
+        data: data,
+        backgroundColor: this.generateColors(labels.length),
         borderWidth: 2,
         borderColor: '#1a1a1a'
       }]
@@ -550,19 +585,28 @@ export class DashboardComponent implements OnInit {
   }
 
   generateColors(count: number): string[] {
+    // Pastellfarben
     const baseColors = [
-      '#3f51b5', // Indigo
-      '#4caf50', // Green
-      '#ff9800', // Orange
-      '#f44336', // Red
-      '#9c27b0', // Purple
-      '#2196f3', // Blue
-      '#ffeb3b', // Yellow
-      '#00bcd4', // Cyan
-      '#e91e63', // Pink
-      '#009688', // Teal
-      '#ff5722', // Deep Orange
-      '#673ab7', // Deep Purple
+      '#B4A7D6', // Pastel Lavender
+      '#A8D8B9', // Pastel Mint
+      '#FFD6A5', // Pastel Peach
+      '#FFADAD', // Pastel Coral
+      '#D5AAFF', // Pastel Purple
+      '#9DB4FF', // Pastel Blue
+      '#FFF5BA', // Pastel Yellow
+      '#A2E4E8', // Pastel Cyan
+      '#FFB3D9', // Pastel Pink
+      '#B2DFD5', // Pastel Teal
+      '#FFCCB5', // Pastel Orange
+      '#C5B3E6', // Pastel Violet
+      '#C9E4C5', // Pastel Green
+      '#FFE5D0', // Pastel Apricot
+      '#E4C4D8', // Pastel Mauve
+      '#B5E7E7', // Pastel Aqua
+      '#F7D794', // Pastel Gold
+      '#DCC6E0', // Pastel Orchid
+      '#AED9E0', // Pastel Sky
+      '#FFD3B5', // Pastel Salmon
     ];
 
     const colors: string[] = [];
@@ -570,6 +614,24 @@ export class DashboardComponent implements OnInit {
       colors.push(baseColors[i % baseColors.length]);
     }
     return colors;
+  }
+
+  getCountryFlag(countryCode: string): string {
+    // Sonderfall für "Sonstige"
+    if (countryCode === 'Sonstige') {
+      return '🌍';
+    }
+
+    const flagMap: { [key: string]: string } = {
+      'US': '🇺🇸', 'FR': '🇫🇷', 'IT': '🇮🇹', 'DE': '🇩🇪',
+      'GB': '🇬🇧', 'NL': '🇳🇱', 'CA': '🇨🇦', 'JP': '🇯🇵',
+      'AU': '🇦🇺', 'ES': '🇪🇸', 'HK': '🇭🇰', 'CH': '🇨🇭',
+      'SG': '🇸🇬', 'BE': '🇧🇪', 'XX': '🏴', 'NO': '🇳🇴',
+      'FI': '🇫🇮', 'PL': '🇵🇱', 'IE': '🇮🇪', 'AT': '🇦🇹',
+      'SE': '🇸🇪', 'KY': '🇰🇾', 'DK': '🇩🇰', 'PT': '🇵🇹',
+      'RM': '🇷🇴', 'II': '🇮🇳', 'III': '🇨🇳'
+    };
+    return flagMap[countryCode] || '🏳️';
   }
 
   refresh(): void {
