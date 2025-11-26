@@ -256,16 +256,25 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
             }
         }
 
-        // Update country if import has a valid country and stock has no country or "XX"
+        // Update country if import has a valid country and stock has no country or unknown country
         if (entry.getCountry() != null &&
             !entry.getCountry().isEmpty() &&
-            !"XX".equals(entry.getCountry()) &&
-            (stock.getCountry() == null || stock.getCountry().isEmpty() || "XX".equals(stock.getCountry()))) {
+            !"XX".equals(entry.getCountry())) {
 
-            log.info("Updating country for stock '{}' (ISIN: {}) from '{}' to '{}'",
-                stock.getName(), stock.getIsin(), stock.getCountry(), entry.getCountry());
-            stock.setCountry(entry.getCountry());
-            needsUpdate = true;
+            // Check if current country is unknown or missing
+            boolean shouldUpdateCountry = stock.getCountry() == null ||
+                stock.getCountry().isEmpty() ||
+                "XX".equals(stock.getCountry()) ||
+                "N/A".equalsIgnoreCase(stock.getCountry()) ||
+                "UNKNOWN".equalsIgnoreCase(stock.getCountry()) ||
+                "--".equals(stock.getCountry());
+
+            if (shouldUpdateCountry) {
+                log.info("Updating country for stock '{}' (ISIN: {}) from '{}' to '{}'",
+                    stock.getName(), stock.getIsin(), stock.getCountry(), entry.getCountry());
+                stock.setCountry(entry.getCountry());
+                needsUpdate = true;
+            }
         }
 
         if (needsUpdate) {

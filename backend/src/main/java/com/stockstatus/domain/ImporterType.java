@@ -47,7 +47,12 @@ public enum ImporterType {
     /**
      * iShares Web importer - fetches holdings from iShares website
      */
-    ISHARES_WEB("iShares Web", "iShares ETF holdings from website");
+    ISHARES_WEB("iShares Web", "iShares ETF holdings from website"),
+
+    /**
+     * Amundi Excel format
+     */
+    AMUNDI("Amundi Excel", "Amundi ETF holdings Excel format");
 
     private final String displayName;
     private final String description;

@@ -204,6 +204,7 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.FIDELITY, label: 'Fidelity Excel' },
     { value: ImporterType.XTRACKERS, label: 'Xtrackers Excel' },
     { value: ImporterType.VANECK, label: 'VanEck Excel' },
+    { value: ImporterType.AMUNDI, label: 'Amundi Excel' },
     { value: ImporterType.ISHARES_WEB, label: 'iShares Web' }
   ];
 

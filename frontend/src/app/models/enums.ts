@@ -12,6 +12,7 @@ export enum ImporterType {
   FIDELITY = 'FIDELITY',
   XTRACKERS = 'XTRACKERS',
   VANECK = 'VANECK',
+  AMUNDI = 'AMUNDI',
   ISHARES_WEB = 'ISHARES_WEB'
 }
 
