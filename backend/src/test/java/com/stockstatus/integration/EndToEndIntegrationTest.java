@@ -57,7 +57,7 @@ class EndToEndIntegrationTest extends BaseIntegrationTest {
         ETFRequestDTO etfRequest = ETFRequestDTO.builder()
             .name("Test ETF")
             .isin("IE0012345678")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         MvcResult etfResult = mockMvc.perform(post("/api/etfs")

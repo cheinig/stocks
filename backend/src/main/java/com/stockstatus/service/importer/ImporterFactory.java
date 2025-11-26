@@ -17,8 +17,6 @@ import java.util.List;
 @Slf4j
 public class ImporterFactory {
 
-    private final GenericCSVImporter genericCSVImporter;
-    private final GenericExcelImporter genericExcelImporter;
     private final FidelityExcelImporter fidelityExcelImporter;
     private final XtrackersExcelImporter xtrackersExcelImporter;
     private final VanEckExcelImporter vanEckExcelImporter;
@@ -35,15 +33,6 @@ public class ImporterFactory {
         log.debug("Getting importer for type: {}", importerType);
 
         switch (importerType) {
-            case GENERIC_CSV:
-            case ISHARES_CSV:
-            case VANGUARD_CSV:
-            case SPDR_CSV:
-                return genericCSVImporter;
-
-            case GENERIC_EXCEL:
-                return genericExcelImporter;
-
             case FIDELITY:
                 return fidelityExcelImporter;
 
@@ -70,8 +59,8 @@ public class ImporterFactory {
     public FileImporter getImporterForFile(MultipartFile file) {
         log.debug("Getting importer for file: {}", file.getOriginalFilename());
 
-        // Check specific importers first (like Fidelity, Xtrackers, VanEck, Amundi), then fall back to generic ones
-        List<FileImporter> importers = List.of(fidelityExcelImporter, xtrackersExcelImporter, vanEckExcelImporter, amundiExcelImporter, genericCSVImporter, genericExcelImporter);
+        // Check specific importers
+        List<FileImporter> importers = List.of(fidelityExcelImporter, xtrackersExcelImporter, vanEckExcelImporter, amundiExcelImporter);
 
         for (FileImporter importer : importers) {
             if (importer.supports(file)) {

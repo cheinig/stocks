@@ -70,7 +70,7 @@ class PortfolioCalculationServiceTest {
             .id(1L)
             .name("Vanguard S&P 500")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         testPortfolio = Portfolio.builder()

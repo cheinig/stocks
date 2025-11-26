@@ -56,7 +56,7 @@ class ETFServiceTest {
             .id(1L)
             .name("Vanguard S&P 500")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         testStock = Stock.builder()
@@ -83,7 +83,7 @@ class ETFServiceTest {
         ETF newETF = ETF.builder()
             .name("Vanguard S&P 500")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         when(etfRepository.existsByIsin(newETF.getIsin())).thenReturn(false);
@@ -107,7 +107,7 @@ class ETFServiceTest {
         ETF newETF = ETF.builder()
             .name("Vanguard S&P 500")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         when(etfRepository.existsByIsin(newETF.getIsin())).thenReturn(true);
@@ -128,7 +128,7 @@ class ETFServiceTest {
         ETF newETF = ETF.builder()
             .name("Test ETF")
             .isin("INVALID")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         // When/Then
@@ -146,7 +146,7 @@ class ETFServiceTest {
         ETF updateData = ETF.builder()
             .name("Vanguard S&P 500 Updated")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_EXCEL)
+            .importerType(ImporterType.XTRACKERS)
             .build();
 
         when(etfRepository.findById(1L)).thenReturn(Optional.of(testETF));
@@ -169,7 +169,7 @@ class ETFServiceTest {
         ETF updateData = ETF.builder()
             .name("Test")
             .isin("IE00B3XXRP09")
-            .importerType(ImporterType.GENERIC_CSV)
+            .importerType(ImporterType.FIDELITY)
             .build();
 
         when(etfRepository.findById(999L)).thenReturn(Optional.empty());
@@ -280,16 +280,16 @@ class ETFServiceTest {
     void findByImporterType_Success() {
         // Given
         List<ETF> etfs = Arrays.asList(testETF);
-        when(etfRepository.findByImporterType(ImporterType.GENERIC_CSV)).thenReturn(etfs);
+        when(etfRepository.findByImporterType(ImporterType.FIDELITY)).thenReturn(etfs);
 
         // When
-        List<ETF> result = etfService.findByImporterType(ImporterType.GENERIC_CSV);
+        List<ETF> result = etfService.findByImporterType(ImporterType.FIDELITY);
 
         // Then
         assertThat(result).isNotNull();
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getImporterType()).isEqualTo(ImporterType.GENERIC_CSV);
-        verify(etfRepository).findByImporterType(ImporterType.GENERIC_CSV);
+        assertThat(result.get(0).getImporterType()).isEqualTo(ImporterType.FIDELITY);
+        verify(etfRepository).findByImporterType(ImporterType.FIDELITY);
     }
 
     @Test
@@ -418,13 +418,13 @@ class ETFServiceTest {
     @DisplayName("Should count ETFs by importer type")
     void countByImporterType_Success() {
         // Given
-        when(etfRepository.countByImporterType(ImporterType.GENERIC_CSV)).thenReturn(3L);
+        when(etfRepository.countByImporterType(ImporterType.FIDELITY)).thenReturn(3L);
 
         // When
-        long result = etfService.countByImporterType(ImporterType.GENERIC_CSV);
+        long result = etfService.countByImporterType(ImporterType.FIDELITY);
 
         // Then
         assertThat(result).isEqualTo(3L);
-        verify(etfRepository).countByImporterType(ImporterType.GENERIC_CSV);
+        verify(etfRepository).countByImporterType(ImporterType.FIDELITY);
     }
 }
