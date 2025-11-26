@@ -233,6 +233,7 @@ jobs:
       contents: read
       security-events: write
       packages: read
+      actions: read
 
     strategy:
       matrix:
@@ -261,7 +262,7 @@ jobs:
           output: 'trivy-results-${{ matrix.component }}.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results-${{ matrix.component }}.sarif'
