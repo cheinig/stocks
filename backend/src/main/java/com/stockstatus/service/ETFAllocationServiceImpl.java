@@ -160,6 +160,7 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
 
     /**
      * Find existing stock by ISIN or name, or create new one
+     * Updates sector information from import data if available
      * @param entry the allocation entry containing stock information
      * @return the found or created stock
      */
@@ -168,16 +169,26 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
         if (entry.getIsin() != null && !entry.getIsin().isEmpty()) {
             Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
             if (existingStock.isPresent()) {
+                Stock stock = existingStock.get();
                 log.debug("Found existing stock by ISIN: {}", entry.getIsin());
-                return existingStock.get();
+
+                // Update sector from import data if available and not "Unbekannt"
+                updateStockFromImport(stock, entry);
+
+                return stock;
             }
         }
 
         // If no ISIN or not found by ISIN, try to find by name
         Optional<Stock> stockByName = stockService.findByName(entry.getName());
         if (stockByName.isPresent()) {
+            Stock stock = stockByName.get();
             log.debug("Found existing stock by name: {}", entry.getName());
-            return stockByName.get();
+
+            // Update sector from import data if available and not "Unbekannt"
+            updateStockFromImport(stock, entry);
+
+            return stock;
         }
 
         // Create new stock
@@ -192,5 +203,47 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
             .build();
 
         return stockService.createStock(newStock);
+    }
+
+    /**
+     * Update stock information from import data if the import has better data
+     * @param stock The existing stock to potentially update
+     * @param entry The import entry with new data
+     */
+    private void updateStockFromImport(Stock stock, AllocationEntry entry) {
+        boolean needsUpdate = false;
+
+        // Update sector if import has a valid sector and it's better than what we have
+        if (entry.getSector() != null &&
+            !entry.getSector().isEmpty() &&
+            !"Unbekannt".equals(entry.getSector())) {
+
+            // Always update if current sector is "Unbekannt" or null
+            if (stock.getSector() == null ||
+                stock.getSector().isEmpty() ||
+                "Unbekannt".equals(stock.getSector())) {
+
+                log.info("Updating sector for stock '{}' (ISIN: {}) from '{}' to '{}'",
+                    stock.getName(), stock.getIsin(), stock.getSector(), entry.getSector());
+                stock.setSector(entry.getSector());
+                needsUpdate = true;
+            }
+        }
+
+        // Update country if import has a valid country and stock has no country or "XX"
+        if (entry.getCountry() != null &&
+            !entry.getCountry().isEmpty() &&
+            !"XX".equals(entry.getCountry()) &&
+            (stock.getCountry() == null || stock.getCountry().isEmpty() || "XX".equals(stock.getCountry()))) {
+
+            log.info("Updating country for stock '{}' (ISIN: {}) from '{}' to '{}'",
+                stock.getName(), stock.getIsin(), stock.getCountry(), entry.getCountry());
+            stock.setCountry(entry.getCountry());
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            stockService.updateStock(stock.getId(), stock);
+        }
     }
 }

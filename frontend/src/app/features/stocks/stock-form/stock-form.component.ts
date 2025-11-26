@@ -471,18 +471,20 @@ export class StockFormComponent implements OnInit {
     );
   });
 
+  // GICS (Global Industry Classification Standard) Sektoren
   sectors = [
-    'Technology',
-    'Healthcare',
-    'Financials',
+    'Communication Services',
     'Consumer Discretionary',
     'Consumer Staples',
-    'Industrials',
     'Energy',
+    'Financials',
+    'Health Care',
+    'Industrials',
+    'Information Technology',
     'Materials',
     'Real Estate',
     'Utilities',
-    'Communication Services'
+    'Unbekannt'
   ];
 
   constructor() {

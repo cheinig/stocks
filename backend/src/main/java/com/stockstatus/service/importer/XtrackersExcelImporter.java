@@ -128,15 +128,15 @@ public class XtrackersExcelImporter implements FileImporter {
                     // Extract country code from ISIN (first 2 characters)
                     String countryCode = extractCountryFromIsin(isin);
 
-                    // Map industry to sector (if available)
-                    String sector = industry.isEmpty() ? null : industry;
+                    // Map industry classification to GICS standard
+                    String mappedSector = mapSectorToGICS(industry);
 
                     AllocationEntry entry = AllocationEntry.builder()
                         .isin(isin)
                         .name(name)
                         .percentage(percentage)
                         .country(countryCode)
-                        .sector(sector)
+                        .sector(mappedSector)
                         .build();
 
                     entries.add(entry);
@@ -358,5 +358,82 @@ public class XtrackersExcelImporter implements FileImporter {
             default:
                 return "";
         }
+    }
+
+    /**
+     * Map Xtrackers industry classification to GICS (Global Industry Classification Standard) sectors
+     * @param sector The industry classification from Xtrackers data
+     * @return GICS-compliant sector name or "Unbekannt" if not mappable
+     */
+    private String mapSectorToGICS(String sector) {
+        if (sector == null || sector.trim().isEmpty()) {
+            return "Unbekannt";
+        }
+
+        // Normalize sector name for matching
+        String normalizedSector = sector.trim().toLowerCase();
+
+        return switch (normalizedSector) {
+            // Technology sector
+            case "technology", "technologie", "information technology", "informationstechnologie",
+                 "tech", "it", "software", "hardware", "semiconductors", "halbleiter" ->
+                "Information Technology";
+
+            // Healthcare sector
+            case "healthcare", "health care", "gesundheitswesen", "gesundheitsversorgung", "gesundheit", "pharma",
+                 "pharmaceuticals", "biotechnology", "biotech", "medical", "medizin" ->
+                "Health Care";
+
+            // Financials sector
+            case "financials", "financial", "finanzen", "finanzwesen", "finanzdienstleister",
+                 "banks", "banken", "insurance", "versicherungen", "financial services" ->
+                "Financials";
+
+            // Consumer Discretionary sector
+            case "consumer discretionary", "consumer cyclical", "zyklische konsumgüter",
+                 "konsumgüter zyklisch", "cyclical consumer goods", "retail", "einzelhandel",
+                 "consumer goods cyclical", "cyclical consumer goods & services",
+                 "verbrauchsgüter" ->
+                "Consumer Discretionary";
+
+            // Consumer Staples sector
+            case "consumer staples", "consumer defensive", "basiskonsumgüter", "nicht-zyklische konsumgüter",
+                 "nichtzyklische konsumgüter", "konsumgüter nicht-zyklisch", "non-cyclical consumer goods",
+                 "food & beverage", "consumer goods - defensive", "consumer goods & services" ->
+                "Consumer Staples";
+
+            // Industrials sector
+            case "industrials", "industrial", "industrie", "industriewerte", "industrieunternehmen",
+                 "machinery", "maschinen", "transportation", "transport" ->
+                "Industrials";
+
+            // Energy sector
+            case "energy", "energie", "oil", "öl", "gas", "oil & gas", "petroleum" ->
+                "Energy";
+
+            // Materials sector
+            case "materials", "basic materials", "rohstoffe", "grundstoffe", "materialien",
+                 "chemicals", "chemie", "metals", "metalle", "mining", "bergbau" ->
+                "Materials";
+
+            // Real Estate sector
+            case "real estate", "immobilien", "reits", "property" ->
+                "Real Estate";
+
+            // Utilities sector
+            case "utilities", "versorgungsbetriebe", "versorgungsunternehmen", "versorger", "utility" ->
+                "Utilities";
+
+            // Communication Services sector
+            case "communication services", "communications", "kommunikationsdienste", "kommunikation",
+                 "telekommunikation", "telecommunication", "telecom", "media", "medien" ->
+                "Communication Services";
+
+            // Unknown/Other
+            default -> {
+                log.debug("Unmapped sector '{}' - using 'Unbekannt'", sector);
+                yield "Unbekannt";
+            }
+        };
     }
 }

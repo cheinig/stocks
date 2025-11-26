@@ -68,6 +68,7 @@ public class VanEckExcelImporter implements FileImporter {
             int nameIndex = findColumnIndex(headerRow, "Holding Name", "Name");
             int isinIndex = findColumnIndex(headerRow, "ISIN");
             int percentageIndex = findColumnIndex(headerRow, "% of Net Assets", "% Net Assets");
+            int sectorIndex = findColumnIndex(headerRow, "Sector", "Sektor", "Branche");
 
             if (nameIndex == -1 || percentageIndex == -1) {
                 throw new InvalidFileFormatException("VanEck", "Required columns not found: Holding Name, % of Net Assets");
@@ -88,6 +89,7 @@ public class VanEckExcelImporter implements FileImporter {
                 String name = getCellValueAsString(row.getCell(nameIndex)).trim();
                 String isin = isinIndex != -1 ? getCellValueAsString(row.getCell(isinIndex)).trim() : "";
                 String percentageStr = getCellValueAsString(row.getCell(percentageIndex)).trim();
+                String sector = sectorIndex != -1 ? getCellValueAsString(row.getCell(sectorIndex)).trim() : "";
 
                 // Skip if name or percentage is empty or N/A
                 if (name.isEmpty() || percentageStr.isEmpty() || percentageStr.equalsIgnoreCase("N/A") || percentageStr.equalsIgnoreCase("-")) {
@@ -125,12 +127,15 @@ public class VanEckExcelImporter implements FileImporter {
                     // Extract country code from ISIN (first 2 characters)
                     String countryCode = extractCountryFromIsin(isin);
 
+                    // Map sector to GICS standard
+                    String mappedSector = mapSectorToGICS(sector);
+
                     AllocationEntry entry = AllocationEntry.builder()
                         .isin(isin)
                         .name(name)
                         .percentage(percentage)
                         .country(countryCode)
-                        .sector(null) // VanEck format doesn't include sector information
+                        .sector(mappedSector)
                         .build();
 
                     entries.add(entry);
@@ -344,5 +349,80 @@ public class VanEckExcelImporter implements FileImporter {
             default:
                 return "";
         }
+    }
+
+    /**
+     * Map VanEck sector names to GICS (Global Industry Classification Standard) sectors
+     * @param sector The sector name from VanEck data
+     * @return GICS-compliant sector name or "Unbekannt" if not mappable
+     */
+    private String mapSectorToGICS(String sector) {
+        if (sector == null || sector.trim().isEmpty()) {
+            return "Unbekannt";
+        }
+
+        // Normalize sector name for matching
+        String normalizedSector = sector.trim().toLowerCase();
+
+        return switch (normalizedSector) {
+            // Technology sector
+            case "technology", "technologie", "information technology", "informationstechnologie",
+                 "tech", "it", "software", "hardware", "semiconductors", "halbleiter" ->
+                "Information Technology";
+
+            // Healthcare sector
+            case "healthcare", "health care", "gesundheitswesen", "gesundheitsversorgung", "gesundheit", "pharma",
+                 "pharmaceuticals", "biotechnology", "biotech", "medical", "medizin" ->
+                "Health Care";
+
+            // Financials sector
+            case "financials", "financial", "finanzen", "finanzwesen", "banks", "banken",
+                 "insurance", "versicherungen", "financial services" ->
+                "Financials";
+
+            // Consumer Discretionary sector
+            case "consumer discretionary", "consumer cyclical", "zyklische konsumgüter",
+                 "konsumgüter zyklisch", "cyclical consumer goods", "retail", "einzelhandel" ->
+                "Consumer Discretionary";
+
+            // Consumer Staples sector
+            case "consumer staples", "consumer defensive", "basiskonsumgüter", "nicht-zyklische konsumgüter",
+                 "nichtzyklische konsumgüter", "konsumgüter nicht-zyklisch", "non-cyclical consumer goods",
+                 "food & beverage" ->
+                "Consumer Staples";
+
+            // Industrials sector
+            case "industrials", "industrial", "industrie", "industriewerte", "machinery",
+                 "maschinen", "transportation", "transport" ->
+                "Industrials";
+
+            // Energy sector
+            case "energy", "energie", "oil", "öl", "gas", "oil & gas", "petroleum" ->
+                "Energy";
+
+            // Materials sector
+            case "materials", "basic materials", "rohstoffe", "grundstoffe", "materialien",
+                 "chemicals", "chemie", "metals", "metalle", "mining", "bergbau" ->
+                "Materials";
+
+            // Real Estate sector
+            case "real estate", "immobilien", "reits", "property" ->
+                "Real Estate";
+
+            // Utilities sector
+            case "utilities", "versorgungsbetriebe", "versorger", "utility" ->
+                "Utilities";
+
+            // Communication Services sector
+            case "communication services", "communications", "kommunikationsdienste", "kommunikation",
+                 "telekommunikation", "telecommunication", "telecom", "media", "medien" ->
+                "Communication Services";
+
+            // Unknown/Other
+            default -> {
+                log.debug("Unmapped sector '{}' - using 'Unbekannt'", sector);
+                yield "Unbekannt";
+            }
+        };
     }
 }

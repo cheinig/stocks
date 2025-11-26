@@ -161,12 +161,15 @@ public class ISharesWebImporter implements WebImporter {
                         continue;
                     }
 
+                    // Map sector to GICS standard
+                    String mappedSector = mapSectorToGICS(sector);
+
                     // Build the allocation entry
                     AllocationEntry entry = AllocationEntry.builder()
                         .name(name.trim())
                         .isin(isin != null && !isin.trim().isEmpty() ? isin.trim() : "")
                         .percentage(percentage)
-                        .sector(sector != null && !sector.trim().isEmpty() ? sector.trim() : null)
+                        .sector(mappedSector)
                         .country(location != null && !location.trim().isEmpty() ? mapCountryNameToCode(location.trim()) : null)
                         .build();
 
@@ -194,6 +197,81 @@ public class ISharesWebImporter implements WebImporter {
             throw new InvalidFileFormatException("iShares Web",
                 "Failed to parse JSON data: " + e.getMessage());
         }
+    }
+
+    /**
+     * Map iShares sector names to GICS (Global Industry Classification Standard) sectors
+     * @param sector The sector name from iShares data
+     * @return GICS-compliant sector name or "Unbekannt" if not mappable
+     */
+    private String mapSectorToGICS(String sector) {
+        if (sector == null || sector.trim().isEmpty()) {
+            return "Unbekannt";
+        }
+
+        // Normalize sector name for matching
+        String normalizedSector = sector.trim().toLowerCase();
+
+        return switch (normalizedSector) {
+            // Technology sector
+            case "technology", "technologie", "information technology", "informationstechnologie",
+                 "tech", "it", "software", "hardware", "semiconductors", "halbleiter" ->
+                "Information Technology";
+
+            // Healthcare sector
+            case "healthcare", "health care", "gesundheitswesen", "gesundheitsversorgung", "gesundheit", "pharma",
+                 "pharmaceuticals", "biotechnology", "biotech", "medical", "medizin" ->
+                "Health Care";
+
+            // Financials sector
+            case "financials", "financial", "finanzen", "finanzwesen", "banks", "banken",
+                 "insurance", "versicherungen", "financial services" ->
+                "Financials";
+
+            // Consumer Discretionary sector
+            case "consumer discretionary", "consumer cyclical", "zyklische konsumgüter",
+                 "konsumgüter zyklisch", "cyclical consumer goods", "retail", "einzelhandel" ->
+                "Consumer Discretionary";
+
+            // Consumer Staples sector
+            case "consumer staples", "consumer defensive", "basiskonsumgüter", "nicht-zyklische konsumgüter",
+                 "nichtzyklische konsumgüter", "konsumgüter nicht-zyklisch", "non-cyclical consumer goods",
+                 "food & beverage" ->
+                "Consumer Staples";
+
+            // Industrials sector
+            case "industrials", "industrial", "industrie", "industriewerte", "machinery",
+                 "maschinen", "transportation", "transport" ->
+                "Industrials";
+
+            // Energy sector
+            case "energy", "energie", "oil", "öl", "gas", "oil & gas", "petroleum" ->
+                "Energy";
+
+            // Materials sector
+            case "materials", "basic materials", "rohstoffe", "grundstoffe", "materialien",
+                 "chemicals", "chemie", "metals", "metalle", "mining", "bergbau" ->
+                "Materials";
+
+            // Real Estate sector
+            case "real estate", "immobilien", "reits", "property" ->
+                "Real Estate";
+
+            // Utilities sector
+            case "utilities", "versorgungsbetriebe", "versorger", "utility" ->
+                "Utilities";
+
+            // Communication Services sector
+            case "communication services", "communications", "kommunikationsdienste", "kommunikation",
+                 "telekommunikation", "telecommunication", "telecom", "media", "medien" ->
+                "Communication Services";
+
+            // Unknown/Other
+            default -> {
+                log.debug("Unmapped sector '{}' - using 'Unbekannt'", sector);
+                yield "Unbekannt";
+            }
+        };
     }
 
     /**

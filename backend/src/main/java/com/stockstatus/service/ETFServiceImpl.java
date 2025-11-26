@@ -312,16 +312,26 @@ public class ETFServiceImpl implements ETFService {
         if (hasValidIsin) {
             Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
             if (existingStock.isPresent()) {
+                Stock stock = existingStock.get();
                 log.debug("Found existing stock by ISIN: {}", entry.getIsin());
-                return existingStock.get();
+
+                // Update sector if current sector is "Unbekannt" and we have a better sector from import
+                updateSectorIfUnknown(stock, entry.getSector());
+
+                return stock;
             }
         }
 
         // If not found by ISIN, try to find by name
         Optional<Stock> existingStockByName = stockService.findByName(entry.getName());
         if (existingStockByName.isPresent()) {
+            Stock stock = existingStockByName.get();
             log.debug("Found existing stock by name: {}", entry.getName());
-            return existingStockByName.get();
+
+            // Update sector if current sector is "Unbekannt" and we have a better sector from import
+            updateSectorIfUnknown(stock, entry.getSector());
+
+            return stock;
         }
 
         // Create new stock
@@ -336,6 +346,37 @@ public class ETFServiceImpl implements ETFService {
             .build();
 
         return stockService.createStock(newStock);
+    }
+
+    /**
+     * Update the stock information from import data if the import has better data
+     * @param stock The stock to potentially update
+     * @param newSector The new sector value from the import
+     */
+    private void updateSectorIfUnknown(Stock stock, String newSector) {
+        boolean needsUpdate = false;
+
+        // Update sector if import has a valid sector and current is "Unbekannt", null, or empty
+        if (newSector != null &&
+            !newSector.isEmpty() &&
+            !"Unbekannt".equals(newSector)) {
+
+            // Always update if current sector is "Unbekannt", null, or empty
+            if (stock.getSector() == null ||
+                stock.getSector().isEmpty() ||
+                "Unbekannt".equals(stock.getSector())) {
+
+                log.info("Updating sector for stock '{}' (ISIN: {}) from '{}' to '{}'",
+                    stock.getName(), stock.getIsin(), stock.getSector(), newSector);
+
+                stock.setSector(newSector);
+                needsUpdate = true;
+            }
+        }
+
+        if (needsUpdate) {
+            stockService.updateStock(stock.getId(), stock);
+        }
     }
 
     /**
