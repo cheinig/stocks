@@ -623,13 +623,39 @@ export class DashboardComponent implements OnInit {
     }
 
     const flagMap: { [key: string]: string } = {
-      'US': '🇺🇸', 'FR': '🇫🇷', 'IT': '🇮🇹', 'DE': '🇩🇪',
-      'GB': '🇬🇧', 'NL': '🇳🇱', 'CA': '🇨🇦', 'JP': '🇯🇵',
-      'AU': '🇦🇺', 'ES': '🇪🇸', 'HK': '🇭🇰', 'CH': '🇨🇭',
-      'SG': '🇸🇬', 'BE': '🇧🇪', 'XX': '🏴', 'NO': '🇳🇴',
-      'FI': '🇫🇮', 'PL': '🇵🇱', 'IE': '🇮🇪', 'AT': '🇦🇹',
-      'SE': '🇸🇪', 'KY': '🇰🇾', 'DK': '🇩🇰', 'PT': '🇵🇹',
-      'RM': '🇷🇴', 'II': '🇮🇳', 'III': '🇨🇳'
+      // North America
+      'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽',
+
+      // Europe
+      'DE': '🇩🇪', 'FR': '🇫🇷', 'GB': '🇬🇧', 'IT': '🇮🇹', 'ES': '🇪🇸',
+      'NL': '🇳🇱', 'CH': '🇨🇭', 'BE': '🇧🇪', 'AT': '🇦🇹', 'SE': '🇸🇪',
+      'NO': '🇳🇴', 'DK': '🇩🇰', 'FI': '🇫🇮', 'IE': '🇮🇪', 'PL': '🇵🇱',
+      'PT': '🇵🇹', 'GR': '🇬🇷', 'CZ': '🇨🇿', 'RO': '🇷🇴', 'HU': '🇭🇺',
+      'LU': '🇱🇺',
+
+      // Asia
+      'JP': '🇯🇵', 'CN': '🇨🇳', 'HK': '🇭🇰', 'SG': '🇸🇬', 'KR': '🇰🇷',
+      'IN': '🇮🇳', 'TW': '🇹🇼', 'TH': '🇹🇭', 'ID': '🇮🇩', 'MY': '🇲🇾',
+      'PH': '🇵🇭', 'VN': '🇻🇳',
+
+      // Middle East
+      'AE': '🇦🇪', 'SA': '🇸🇦', 'IL': '🇮🇱', 'TR': '🇹🇷', 'KW': '🇰🇼',
+      'QA': '🇶🇦', 'BH': '🇧🇭', 'OM': '🇴🇲',
+
+      // Oceania
+      'AU': '🇦🇺', 'NZ': '🇳🇿',
+
+      // South America
+      'BR': '🇧🇷', 'AR': '🇦🇷', 'CL': '🇨🇱', 'CO': '🇨🇴', 'PE': '🇵🇪',
+
+      // Africa
+      'ZA': '🇿🇦', 'EG': '🇪🇬', 'NG': '🇳🇬', 'KE': '🇰🇪', 'MA': '🇲🇦',
+
+      // Caribbean & Other
+      'KY': '🇰🇾', 'BM': '🇧🇲', 'VG': '🇻🇬',
+
+      // Special codes
+      'XX': '🏴', 'N/A': '🏳️', 'UNKNOWN': '🏳️'
     };
     return flagMap[countryCode] || '🏳️';
   }
