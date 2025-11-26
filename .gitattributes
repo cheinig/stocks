@@ -1,0 +1,23 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Shell scripts should use LF
+*.sh text eol=lf
+
+# Maven Wrapper should use LF on all platforms
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
+
+# Docker files
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# YAML files
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Kubernetes manifests
+k8s/**/*.yaml text eol=lf
+
+# Ansible files
+*.j2 text eol=lf
