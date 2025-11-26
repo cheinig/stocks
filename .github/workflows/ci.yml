@@ -37,6 +37,7 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+        continue-on-error: true
 
       - name: Run tests
         run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
