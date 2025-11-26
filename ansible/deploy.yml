@@ -1,0 +1,137 @@
+---
+- name: Deploy Stock-Status Application
+  hosts: all
+  become: yes
+  vars:
+    backup_before_deploy: true
+    rollback_enabled: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - python3-docker
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Create application directory
+      file:
+        path: "{{ app_directory }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Check if .env file exists
+      stat:
+        path: "{{ app_directory }}/.env"
+      register: env_file
+
+    - name: Backup existing .env file
+      copy:
+        src: "{{ app_directory }}/.env"
+        dest: "{{ app_directory }}/.env.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+      when: env_file.stat.exists and backup_before_deploy
+
+    - name: Copy .env.example as template if .env doesn't exist
+      copy:
+        src: ../.env.example
+        dest: "{{ app_directory }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+        force: no
+      when: not env_file.stat.exists
+
+    - name: Copy docker-compose.prod.yml to server
+      copy:
+        src: ../docker-compose.prod.yml
+        dest: "{{ app_directory }}/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+
+    - name: Copy Caddyfile to server
+      copy:
+        src: ../Caddyfile
+        dest: "{{ app_directory }}/Caddyfile"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+      when: caddy_enabled | default(false)
+
+    - name: Log in to Docker Registry
+      docker_login:
+        registry: "{{ docker_registry }}"
+        username: "{{ docker_registry_username }}"
+        password: "{{ docker_registry_password }}"
+      when: docker_registry_username is defined
+
+    - name: Pull latest Docker images
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        pull: yes
+      environment:
+        DOCKER_REGISTRY: "{{ docker_registry }}"
+        IMAGE_OWNER: "{{ docker_image_owner }}"
+        IMAGE_TAG: "{{ docker_image_tag | default('latest') }}"
+
+    - name: Create database backup before deployment
+      community.docker.docker_container_exec:
+        container: stock-status-db
+        command: >
+          pg_dump -U {{ lookup('env', 'POSTGRES_USER') | default('stockstatus') }}
+          -F c -b -v -f /backups/pre-deploy-{{ ansible_date_time.iso8601_basic_short }}.dump
+          {{ lookup('env', 'POSTGRES_DB') | default('stockstatus') }}
+      when: backup_before_deploy
+      ignore_errors: yes
+
+    - name: Stop and remove existing containers
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: absent
+        remove_orphans: yes
+      when: not rolling_update | default(false)
+
+    - name: Start application with docker-compose
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: present
+        restarted: yes
+      environment:
+        DOCKER_REGISTRY: "{{ docker_registry }}"
+        IMAGE_OWNER: "{{ docker_image_owner }}"
+        IMAGE_TAG: "{{ docker_image_tag | default('latest') }}"
+
+    - name: Wait for application to be healthy
+      uri:
+        url: "http://localhost:8080/actuator/health"
+        status_code: 200
+        timeout: 5
+      register: health_check
+      until: health_check.status == 200
+      retries: 12
+      delay: 10
+      ignore_errors: yes
+
+    - name: Display deployment status
+      debug:
+        msg: |
+          Deployment completed!
+          Application health: {{ health_check.status | default('Unknown') }}
+
+    - name: Rollback if health check failed
+      block:
+        - name: Stop failed deployment
+          community.docker.docker_compose:
+            project_src: "{{ app_directory }}"
+            state: absent
+
+        - name: Restore previous version
+          fail:
+            msg: "Health check failed. Please investigate and run rollback.yml manually."
+      when: health_check.failed and rollback_enabled

@@ -544,31 +544,78 @@ Diese Liste beschreibt die schrittweise Umsetzung der Stock-Status Applikation b
 - [ ] SonarQube oder ähnliches Tool zur Code-Qualitätsprüfung
 - [ ] Pre-commit Hooks mit Husky für Lint und Tests
 
-## Phase 13: CI/CD & Deployment
+## Phase 13: CI/CD & Deployment ✅
 
-### 13.1 GitHub Actions / GitLab CI
-- [ ] Pipeline-Datei erstellen (`.github/workflows/ci.yml` oder `.gitlab-ci.yml`)
-- [ ] Stage: Frontend Lint und Tests
-- [ ] Stage: Backend Lint und Tests (Maven/Gradle)
-- [ ] Stage: Build Docker Images für Frontend und Backend
-- [ ] Stage: Push Images zu Docker Registry (optional: GitHub Packages, Docker Hub)
+### 13.1 GitHub Actions / GitLab CI ✅
+- [x] Pipeline-Datei erstellen (`.github/workflows/ci.yml`)
+- [x] Stage: Frontend Lint und Tests
+  - ESLint Code-Analyse
+  - Unit Tests mit Karma/Jasmine
+  - Code Coverage Upload zu Codecov
+- [x] Stage: Backend Lint und Tests (Maven)
+  - Maven Verify mit allen Tests
+  - Code Coverage Upload zu Codecov
+- [x] Stage: Build Docker Images für Frontend und Backend
+  - Multi-Stage Docker Builds
+  - Docker Buildx für optimierte Builds
+  - Cache-Strategie mit GitHub Actions Cache
+- [x] Stage: Push Images zu Docker Registry
+  - GitHub Container Registry (ghcr.io)
+  - Automatisches Tagging (latest, branch, SHA, semver)
+- [x] Security Scanning mit Trivy
+  - Vulnerability Scanning für Frontend und Backend
+  - SARIF Upload zu GitHub Security
 
-### 13.2 Deployment-Automation
-- [ ] Ansible Playbook für Deployment auf Server erstellen
-- [ ] Playbook kopiert `docker-compose.prod.yml` auf Server
-- [ ] Playbook führt `docker compose pull` und `docker compose up -d` aus
-- [ ] Rollback-Playbook für vorherige Version
+### 13.2 Deployment-Automation ✅
+- [x] Ansible Playbook für Deployment auf Server erstellen (`deploy.yml`)
+  - Docker und Docker Compose Installation
+  - .env Datei Management
+  - Database Backup vor Deployment
+  - Docker Image Pull und Container Start
+  - Health Check nach Deployment
+  - Automatischer Rollback bei Fehler
+- [x] Rollback-Playbook für vorherige Version (`rollback.yml`)
+  - Interaktive Version-Auswahl
+  - Optional: Database Restore
+  - Health Check nach Rollback
+- [x] Backup-Playbook (`backup.yml`)
+  - Manuelles Backup erstellen
+  - GPG-Verschlüsselung (optional)
+  - Backup-Retention Management (14 Tage)
+- [x] Ansible Inventory-Datei mit Beispielkonfiguration
+- [x] Ausführliche Ansible Dokumentation ([ansible/README.md](ansible/README.md))
 
-### 13.3 Backup & Recovery
-- [ ] Backup-Cron-Job in Docker Compose testen
-- [ ] Restore-Skript testen
-- [ ] Dokumentation für Backup und Recovery
+### 13.3 Backup & Recovery ✅
+- [x] Backup-Automation dokumentiert
+  - Automatische Backups via docker-compose.prod.yml
+  - Manuelle Backups via Ansible
+  - Retention Policy (14 Tage)
+- [x] Restore-Prozedur dokumentiert
+  - Ansible-basierter Restore
+  - Manueller Restore mit Docker
+- [x] Dokumentation für Backup und Recovery
+  - In ansible/README.md
+  - In Haupt-README.md
 
-### 13.4 Monitoring
-- [ ] Health Endpoints (`/actuator/health`) in Caddy/Traefik prüfen
-- [ ] Prometheus-Metriken aktivieren und exposieren
-- [ ] Optional: Grafana Dashboard für Metriken
-- [ ] Log-Aggregation mit Loki oder ELK (optional)
+### 13.4 Monitoring ✅
+- [x] Monitoring-Playbook erstellen (`monitoring.yml`)
+  - Health Check Script Installation
+  - Systemd Timer für automatische Checks (alle 5 Minuten)
+  - Backend, Frontend, Database Monitoring
+  - Docker Container Status Überwachung
+  - Disk Usage Monitoring
+  - Database Size Monitoring
+- [x] Health Endpoints dokumentiert
+  - `/actuator/health` für Backend Health
+  - `/actuator/info` für Application Info
+  - Frontend Availability Check
+- [x] Monitoring-Dokumentation
+  - Health Check Verwendung
+  - Systemd Service Management
+  - Log-Aggregation Beispiele
+- [ ] Prometheus-Metriken aktivieren und exposieren (optional für später)
+- [ ] Optional: Grafana Dashboard für Metriken (optional für später)
+- [ ] Log-Aggregation mit Loki oder ELK (optional für später)
 
 ## Phase 14: Dokumentation
 

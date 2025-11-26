@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stock-status-config
+  namespace: stock-status
+data:
+  # Database Configuration
+  POSTGRES_DB: "stockstatus"
+  POSTGRES_USER: "stockstatus"
+
+  # Backend Configuration
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/stockstatus"
+  SPRING_DATASOURCE_USERNAME: "stockstatus"
+  SERVER_PORT: "8080"
+
+  # CORS Configuration
+  ALLOWED_ORIGINS: "http://localhost:4200,https://stock-status.example.com"
+
+  # Logging
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_STOCKSTATUS: "DEBUG"
+
+  # JVM Options
+  JAVA_OPTS: "-Xmx512m -Xms256m"

@@ -1,0 +1,61 @@
+---
+- name: Backup & Recovery Management
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ app_directory }}/backups"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Create manual database backup
+      community.docker.docker_container_exec:
+        container: stock-status-db
+        command: >
+          pg_dump -U {{ lookup('env', 'POSTGRES_USER') | default('stockstatus') }}
+          -F c -b -v -f /backups/manual-{{ ansible_date_time.iso8601_basic_short }}.dump
+          {{ lookup('env', 'POSTGRES_DB') | default('stockstatus') }}
+      register: backup_result
+
+    - name: Encrypt backup with GPG (if GPG key is configured)
+      shell: |
+        gpg --encrypt --recipient {{ gpg_recipient }} \
+        {{ app_directory }}/backups/manual-{{ ansible_date_time.iso8601_basic_short }}.dump
+      when: gpg_recipient is defined
+      ignore_errors: yes
+
+    - name: List all backups
+      find:
+        paths: "{{ app_directory }}/backups"
+        patterns: "*.dump*"
+      register: all_backups
+
+    - name: Display backup information
+      debug:
+        msg: |
+          Backup created: manual-{{ ansible_date_time.iso8601_basic_short }}.dump
+          Total backups: {{ all_backups.files | length }}
+          Oldest backup: {{ all_backups.files | sort(attribute='mtime') | first | default('None') }}
+          Latest backup: {{ all_backups.files | sort(attribute='mtime', reverse=true) | first | default('None') }}
+
+    - name: Clean old backups (keep last 14 days)
+      find:
+        paths: "{{ app_directory }}/backups"
+        patterns: "*.dump*"
+        age: "14d"
+      register: old_backups
+
+    - name: Remove old backups
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_backups.files }}"
+      when: old_backups.files | length > 0
+
+    - name: Display cleanup result
+      debug:
+        msg: "Removed {{ old_backups.files | length }} old backup(s)"

@@ -1,0 +1,96 @@
+---
+- name: Rollback Stock-Status Application
+  hosts: all
+  become: yes
+
+  vars_prompt:
+    - name: rollback_tag
+      prompt: "Enter the Docker image tag to rollback to (e.g., v1.0.0 or sha-abc123)"
+      private: no
+
+    - name: restore_database
+      prompt: "Do you want to restore the database backup? (yes/no)"
+      private: no
+      default: "no"
+
+  tasks:
+    - name: Validate rollback tag
+      fail:
+        msg: "Rollback tag cannot be empty"
+      when: rollback_tag == ""
+
+    - name: Stop current application
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: absent
+        remove_orphans: yes
+
+    - name: List available database backups
+      find:
+        paths: "{{ app_directory }}/backups"
+        patterns: "*.dump"
+        age: "-30d"
+      register: backup_files
+      when: restore_database == "yes"
+
+    - name: Display available backups
+      debug:
+        msg: "Available backups: {{ backup_files.files | map(attribute='path') | list }}"
+      when: restore_database == "yes" and backup_files.files | length > 0
+
+    - name: Restore database from latest backup
+      block:
+        - name: Find latest backup
+          set_fact:
+            latest_backup: "{{ backup_files.files | sort(attribute='mtime', reverse=true) | first }}"
+
+        - name: Restore database
+          community.docker.docker_container_exec:
+            container: stock-status-db
+            command: >
+              pg_restore -U {{ lookup('env', 'POSTGRES_USER') | default('stockstatus') }}
+              -d {{ lookup('env', 'POSTGRES_DB') | default('stockstatus') }}
+              -c -v {{ latest_backup.path }}
+      when: restore_database == "yes" and backup_files.files | length > 0
+
+    - name: Log in to Docker Registry
+      docker_login:
+        registry: "{{ docker_registry }}"
+        username: "{{ docker_registry_username }}"
+        password: "{{ docker_registry_password }}"
+      when: docker_registry_username is defined
+
+    - name: Pull previous Docker images
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        pull: yes
+      environment:
+        DOCKER_REGISTRY: "{{ docker_registry }}"
+        IMAGE_OWNER: "{{ docker_image_owner }}"
+        IMAGE_TAG: "{{ rollback_tag }}"
+
+    - name: Start application with previous version
+      community.docker.docker_compose:
+        project_src: "{{ app_directory }}"
+        state: present
+      environment:
+        DOCKER_REGISTRY: "{{ docker_registry }}"
+        IMAGE_OWNER: "{{ docker_image_owner }}"
+        IMAGE_TAG: "{{ rollback_tag }}"
+
+    - name: Wait for application to be healthy
+      uri:
+        url: "http://localhost:8080/actuator/health"
+        status_code: 200
+        timeout: 5
+      register: health_check
+      until: health_check.status == 200
+      retries: 12
+      delay: 10
+
+    - name: Display rollback status
+      debug:
+        msg: |
+          Rollback completed!
+          Application version: {{ rollback_tag }}
+          Application health: {{ health_check.status }}

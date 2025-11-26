@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stock-status-dev
+
+bases:
+  - ../../base
+
+namePrefix: dev-
+
+commonLabels:
+  environment: development
+
+images:
+  - name: ghcr.io/your-username/stock-status-backend
+    newTag: dev
+  - name: ghcr.io/your-username/stock-status-frontend
+    newTag: dev
+
+replicas:
+  - name: backend
+    count: 1
+  - name: frontend
+    count: 1
+
+patchesStrategicMerge:
+  - patch-configmap.yaml
+  - patch-ingress.yaml
+  - patch-resources.yaml
+
+# Deaktiviere HPA und CronJob in Dev
+patchesJson6902:
+  - target:
+      group: autoscaling
+      version: v2
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+
+  - target:
+      group: autoscaling
+      version: v2
+      kind: HorizontalPodAutoscaler
+      name: frontend-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2

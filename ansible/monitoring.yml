@@ -1,0 +1,130 @@
+---
+- name: Setup Monitoring & Health Checks
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install monitoring dependencies
+      apt:
+        name:
+          - curl
+          - jq
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Create monitoring script
+      copy:
+        dest: "{{ app_directory }}/health-check.sh"
+        mode: '0755'
+        content: |
+          #!/bin/bash
+
+          # Health Check Script for Stock-Status Application
+
+          BACKEND_URL="http://localhost:8080"
+          FRONTEND_URL="http://localhost:80"
+
+          echo "=== Stock-Status Health Check ==="
+          echo "Timestamp: $(date)"
+          echo ""
+
+          # Check Backend Health
+          echo "Checking Backend Health..."
+          BACKEND_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" ${BACKEND_URL}/actuator/health)
+          if [ "$BACKEND_HEALTH" = "200" ]; then
+            echo "✓ Backend is healthy (HTTP $BACKEND_HEALTH)"
+          else
+            echo "✗ Backend is unhealthy (HTTP $BACKEND_HEALTH)"
+            exit 1
+          fi
+
+          # Check Backend Info
+          echo ""
+          echo "Backend Application Info:"
+          curl -s ${BACKEND_URL}/actuator/info | jq '.' || echo "Info endpoint not available"
+
+          # Check Frontend
+          echo ""
+          echo "Checking Frontend..."
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${FRONTEND_URL})
+          if [ "$FRONTEND_STATUS" = "200" ]; then
+            echo "✓ Frontend is accessible (HTTP $FRONTEND_STATUS)"
+          else
+            echo "✗ Frontend is not accessible (HTTP $FRONTEND_STATUS)"
+            exit 1
+          fi
+
+          # Check Database Connection
+          echo ""
+          echo "Checking Database Connection..."
+          docker exec stock-status-db pg_isready -U stockstatus > /dev/null 2>&1
+          if [ $? -eq 0 ]; then
+            echo "✓ Database is ready"
+          else
+            echo "✗ Database is not ready"
+            exit 1
+          fi
+
+          # Check Docker Containers
+          echo ""
+          echo "Docker Container Status:"
+          docker ps --filter "name=stock-status" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+          # Check Disk Space
+          echo ""
+          echo "Disk Usage:"
+          df -h {{ app_directory }} | tail -1
+
+          # Check Database Size
+          echo ""
+          echo "Database Size:"
+          docker exec stock-status-db psql -U stockstatus -c "SELECT pg_database.datname, pg_size_pretty(pg_database_size(pg_database.datname)) AS size FROM pg_database;" | grep stockstatus
+
+          echo ""
+          echo "=== All Checks Passed ==="
+
+    - name: Create systemd service for health monitoring
+      copy:
+        dest: /etc/systemd/system/stock-status-health.service
+        content: |
+          [Unit]
+          Description=Stock-Status Health Check
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          ExecStart={{ app_directory }}/health-check.sh
+          User={{ ansible_user }}
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Create systemd timer for health monitoring
+      copy:
+        dest: /etc/systemd/system/stock-status-health.timer
+        content: |
+          [Unit]
+          Description=Stock-Status Health Check Timer
+
+          [Timer]
+          OnBootSec=5min
+          OnUnitActiveSec=5min
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Enable and start health monitoring timer
+      systemd:
+        name: stock-status-health.timer
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Run initial health check
+      command: "{{ app_directory }}/health-check.sh"
+      register: health_output
+      ignore_errors: yes
+
+    - name: Display health check results
+      debug:
+        msg: "{{ health_output.stdout_lines }}"

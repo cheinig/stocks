@@ -31,7 +31,8 @@ Die Stock-Status Applikation bietet:
 
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
-- **Reverse Proxy**: Caddy (Auto-HTTPS)
+- **Orchestration**: Kubernetes (mit Kustomize)
+- **Reverse Proxy**: Caddy (Docker) / NGINX Ingress (Kubernetes)
 - **Caching**: Redis (optional)
 
 ## Projekt-Struktur
@@ -168,9 +169,98 @@ npm test                       # Unit Tests
 npm run e2e                    # E2E Tests (Cypress)
 ```
 
+## CI/CD Pipeline
+
+Die Applikation verwendet GitHub Actions für Continuous Integration und Deployment.
+
+### Workflow Stages
+
+1. **Frontend Lint & Test**
+   - ESLint Code-Analyse
+   - Unit Tests mit Karma/Jasmine
+   - Code Coverage Upload
+
+2. **Backend Lint & Test**
+   - Maven Tests (Unit & Integration)
+   - Code Coverage Upload
+   - JaCoCo Reports
+
+3. **Docker Image Build**
+   - Automatischer Build bei Push auf `main` oder `dev`
+   - Multi-Stage Docker Builds
+   - Images werden zu GitHub Container Registry gepusht
+   - Tags: `latest`, Branch-Name, SHA
+
+4. **Security Scan**
+   - Trivy Vulnerability Scanner
+   - SARIF Reports zu GitHub Security
+
+### Docker Images
+
+Images sind verfügbar unter:
+```
+ghcr.io/<username>/stock-status-frontend:latest
+ghcr.io/<username>/stock-status-backend:latest
+```
+
+Pull Images:
+```bash
+docker pull ghcr.io/<username>/stock-status-frontend:latest
+docker pull ghcr.io/<username>/stock-status-backend:latest
+```
+
 ## Deployment
 
-### Production mit Docker Compose
+Die Applikation kann auf verschiedene Arten deployed werden:
+
+### 1. Kubernetes Deployment (Empfohlen für Production)
+
+Vollständige Kubernetes-Deskriptoren mit Kustomize für Dev und Production.
+
+**Quick Start:**
+```bash
+cd k8s
+./deploy.sh dev   # Development
+./deploy.sh prod  # Production
+```
+
+**Features:**
+- StatefulSet für PostgreSQL mit persistentem Storage
+- HorizontalPodAutoscaler für automatisches Skalieren
+- NGINX Ingress mit TLS (cert-manager)
+- Automatische Backups via CronJob
+- Separate Overlays für Dev/Prod
+- Health Checks und Readiness Probes
+
+Siehe [k8s/README.md](k8s/README.md) und [k8s/QUICKSTART.md](k8s/QUICKSTART.md) für Details.
+
+### 2. Automatisches Deployment mit Ansible
+
+Für VM-basierte Production-Deployments mit Docker Compose.
+
+Siehe [ansible/README.md](ansible/README.md) für Details.
+
+**Schnellstart:**
+
+```bash
+# Inventory konfigurieren
+cd ansible
+nano inventory.yml
+
+# Deployment durchführen
+ansible-playbook -i inventory.yml deploy.yml
+
+# Monitoring einrichten
+ansible-playbook -i inventory.yml monitoring.yml
+```
+
+**Verfügbare Playbooks:**
+- `deploy.yml` - Hauptdeployment mit Health Checks
+- `rollback.yml` - Rollback zu vorheriger Version
+- `backup.yml` - Backup Management
+- `monitoring.yml` - Health Check Setup
+
+### 3. Manuelles Production-Deployment mit Docker Compose
 
 1. **Production Config**:
    ```bash
@@ -188,17 +278,82 @@ npm run e2e                    # E2E Tests (Cypress)
    docker compose -f docker-compose.prod.yml up -d
    ```
 
-4. **Reverse Proxy** (Caddy) läuft automatisch mit Auto-HTTPS
+4. **Health Check**:
+   ```bash
+   curl http://localhost:8080/actuator/health
+   ```
+
+5. **Reverse Proxy** (Caddy) läuft automatisch mit Auto-HTTPS
 
 ### Backup & Recovery
 
-Automatische Backups werden täglich erstellt:
+#### Automatische Backups
+
+Der `backup`-Service in `docker-compose.prod.yml` erstellt täglich verschlüsselte Backups:
+- **Zeitpunkt**: 02:00 Uhr täglich
+- **Retention**: 14 Tage
+- **Verschlüsselung**: GPG (optional)
+
+#### Manuelle Backups
+
 ```bash
-# Manuelles Backup
-docker compose exec postgres pg_dump -U stockstatus stockstatus > backup.sql
+# Mit Ansible
+ansible-playbook -i ansible/inventory.yml ansible/backup.yml
+
+# Manuell mit Docker
+docker compose exec postgres pg_dump -U stockstatus -F c stockstatus > backup.dump
 
 # Restore
-docker compose exec -T postgres psql -U stockstatus stockstatus < backup.sql
+docker compose exec -T postgres pg_restore -U stockstatus -d stockstatus -c < backup.dump
+```
+
+## Monitoring & Health Checks
+
+### Health Endpoints
+
+Die Applikation bietet folgende Health Endpoints:
+
+- **Backend Health**: `http://localhost:8080/actuator/health`
+- **Backend Info**: `http://localhost:8080/actuator/info`
+- **Prometheus Metrics**: `http://localhost:8080/actuator/prometheus` (optional)
+
+### Automatisches Monitoring
+
+Mit Ansible können Sie automatische Health Checks einrichten:
+
+```bash
+ansible-playbook -i ansible/inventory.yml ansible/monitoring.yml
+```
+
+Dies erstellt:
+- Health Check Script auf dem Server
+- Systemd Timer für regelmäßige Checks (alle 5 Minuten)
+- Überwachung von Backend, Frontend, Datenbank und Container Status
+
+### Manueller Health Check
+
+```bash
+# Auf dem Server
+/opt/stock-status/health-check.sh
+
+# Remote via Ansible
+ssh deploy@your-server.example.com /opt/stock-status/health-check.sh
+```
+
+### Logs
+
+```bash
+# Alle Services
+docker compose logs -f
+
+# Nur Backend
+docker compose logs -f backend
+
+# Nur Frontend
+docker compose logs -f frontend
+
+# Mit Zeitstempel und Zeilen-Limit
+docker compose logs -f --tail=100 --timestamps backend
 ```
 
 ## Konfiguration

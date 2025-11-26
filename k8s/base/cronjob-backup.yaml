@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: stock-status
+  labels:
+    app: postgres-backup
+spec:
+  schedule: "0 2 * * *"  # Täglich um 2:00 Uhr
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: postgres-backup
+              image: postgres:15-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  DATE=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/backup_${DATE}.dump"
+
+                  echo "Starting backup at $(date)"
+                  echo "Backup file: ${BACKUP_FILE}"
+
+                  pg_dump -h postgres-service -U ${POSTGRES_USER} -F c -b -v -f ${BACKUP_FILE} ${POSTGRES_DB}
+
+                  if [ $? -eq 0 ]; then
+                    echo "Backup completed successfully"
+                    echo "Backup size: $(du -h ${BACKUP_FILE} | cut -f1)"
+
+                    # Cleanup old backups (keep last 14 days)
+                    echo "Cleaning up old backups..."
+                    find /backups -name "backup_*.dump" -type f -mtime +14 -delete
+                    echo "Remaining backups:"
+                    ls -lh /backups/
+                  else
+                    echo "Backup failed!"
+                    exit 1
+                  fi
+              env:
+                - name: POSTGRES_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stock-status-config
+                      key: POSTGRES_DB
+                - name: POSTGRES_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stock-status-config
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: stock-status-secrets
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: postgres-backup
+                  mountPath: /backups
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "500m"
+          volumes:
+            - name: postgres-backup
+              persistentVolumeClaim:
+                claimName: postgres-backup-pvc
