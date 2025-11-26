@@ -12,7 +12,9 @@ SELECT
     1,
     'STOCK',
     s.id,
-    p.quantity
+    p.quantity,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
 FROM (
     SELECT 'US0378331005' as isin, 10.5 as quantity UNION ALL  -- Apple
     SELECT 'US5949181045', 15.0 UNION ALL                      -- Microsoft
@@ -28,7 +30,9 @@ SELECT
     1,
     'ETF',
     e.id,
-    p.quantity
+    p.quantity,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
 FROM (
     SELECT 'IE00B4L5Y983' as isin, 25.0 as quantity UNION ALL  -- iShares Core MSCI World
     SELECT 'IE00B3RBWM25', 20.0                                -- Vanguard FTSE All-World
