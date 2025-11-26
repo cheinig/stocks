@@ -31,3 +31,17 @@ export interface ETFResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ImportStatistics {
+  etfId: number;
+  etfName: string;
+  allocationVersion: number;
+  totalEntries: number;
+  newStocksCreated: number;
+  newStockIsins: string[];
+  newStockNames: string[];
+  existingStocks: number;
+  warnings: string[];
+  success: boolean;
+  errorMessage?: string;
+}

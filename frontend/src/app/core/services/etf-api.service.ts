@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ETF, ETFRequest, ETFResponse } from '../../models/etf.model';
+import { ETF, ETFRequest, ETFResponse, ImportStatistics } from '../../models/etf.model';
 import { ETFAllocation } from '../../models/allocation.model';
 import { Page, PageRequest } from '../../models/page.model';
 
@@ -53,10 +53,10 @@ export class EtfApiService {
     return this.http.get<Page<ETF>>(`${this.baseUrl}/search`, { params });
   }
 
-  uploadAllocation(etfId: number, file: File): Observable<ETFAllocation[]> {
+  uploadAllocation(etfId: number, file: File): Observable<ImportStatistics> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ETFAllocation[]>(`${this.baseUrl}/${etfId}/upload`, formData);
+    return this.http.post<ImportStatistics>(`${this.baseUrl}/${etfId}/upload`, formData);
   }
 
   getCurrentAllocation(etfId: number): Observable<ETFAllocation[]> {
@@ -71,7 +71,7 @@ export class EtfApiService {
     return this.http.get<Record<number, ETFAllocation[]>>(`${this.baseUrl}/${etfId}/allocations/history`);
   }
 
-  refreshWebHoldings(etfId: number): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/${etfId}/refresh`, {});
+  refreshWebHoldings(etfId: number): Observable<{ success: boolean; message: string; warnings?: string[] }> {
+    return this.http.post<{ success: boolean; message: string; warnings?: string[] }>(`${this.baseUrl}/${etfId}/refresh`, {});
   }
 }

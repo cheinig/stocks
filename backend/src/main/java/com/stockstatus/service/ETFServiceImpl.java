@@ -18,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -220,7 +222,7 @@ public class ETFServiceImpl implements ETFService {
     }
 
     @Override
-    public void refreshWebHoldings(Long etfId) {
+    public List<String> refreshWebHoldings(Long etfId) {
         log.info("Refreshing web holdings for ETF ID: {}", etfId);
 
         // Get the ETF
@@ -266,6 +268,12 @@ public class ETFServiceImpl implements ETFService {
 
         log.info("Fetched {} allocation entries from web source", allocationEntries.size());
 
+        // Collect unique unmapped sectors
+        Set<String> unmappedSectors = allocationEntries.stream()
+            .map(AllocationEntry::getOriginalSector)
+            .filter(originalSector -> originalSector != null && !originalSector.isEmpty())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
         // Determine the next allocation version
         List<Integer> existingVersions = etfAllocationRepository.findAllVersionsByEtfId(etfId);
         int nextVersion = existingVersions.isEmpty() ? 1 : existingVersions.get(0) + 1;
@@ -294,6 +302,8 @@ public class ETFServiceImpl implements ETFService {
 
         log.info("Successfully saved {} allocations as version {} for ETF ID: {}",
             allocations.size(), nextVersion, etfId);
+
+        return new ArrayList<>(unmappedSectors);
     }
 
     /**

@@ -54,4 +54,10 @@ public class AllocationEntry {
      * Optional sector
      */
     private String sector;
+
+    /**
+     * Original sector name from import file (for tracking unmapped sectors)
+     * This field is set when the sector value couldn't be mapped to a GICS sector
+     */
+    private String originalSector;
 }

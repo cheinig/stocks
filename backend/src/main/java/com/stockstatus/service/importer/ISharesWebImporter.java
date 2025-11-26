@@ -132,8 +132,13 @@ public class ISharesWebImporter implements WebImporter {
                     // Index 1: Name
                     String name = row.get(1).asText();
 
-                    // Index 2: Sector
-                    String sector = row.get(2).asText();
+                    // Index 2: Sector - remove all whitespace including non-breaking spaces (\u00A0)
+                    String sectorRaw = row.get(2).asText();
+                    String sector = sectorRaw.strip();  // Java 11+ strip() removes all Unicode whitespace
+                    if (sector.equals(sectorRaw)) {
+                        // If strip() didn't change anything, try manual removal of non-breaking space
+                        sector = sectorRaw.replace("\u00A0", "").trim();
+                    }
 
                     // Index 5: Weight - get "raw" value from the object
                     JsonNode weightNode = row.get(5);
@@ -164,13 +169,18 @@ public class ISharesWebImporter implements WebImporter {
                     // Map sector to GICS standard
                     String mappedSector = mapSectorToGICS(sector);
 
+                    // If sector mapping returned null (e.g., for cash), use "Unbekannt" but don't track as unmapped
+                    String finalSector = mappedSector != null ? mappedSector : "Unbekannt";
+                    boolean shouldTrackAsUnmapped = mappedSector != null && "Unbekannt".equals(mappedSector);
+
                     // Build the allocation entry
                     AllocationEntry entry = AllocationEntry.builder()
                         .name(name.trim())
                         .isin(isin != null && !isin.trim().isEmpty() ? isin.trim() : "")
                         .percentage(percentage)
-                        .sector(mappedSector)
+                        .sector(finalSector)
                         .country(location != null && !location.trim().isEmpty() ? mapCountryNameToCode(location.trim()) : null)
+                        .originalSector(shouldTrackAsUnmapped && sector != null && !sector.isEmpty() ? sector : null)
                         .build();
 
                     entries.add(entry);
@@ -265,6 +275,11 @@ public class ISharesWebImporter implements WebImporter {
             case "communication services", "communications", "kommunikationsdienste", "kommunikation",
                  "telekommunikation", "telecommunication", "telecom", "media", "medien" ->
                 "Communication Services";
+
+            // Cash positions and derivatives - not a real sector, map to null to skip tracking
+            case "cash und/oder derivate", "cash and/or derivatives", "cash", "derivatives",
+                 "bargeld", "liquidität", "liquidity" ->
+                null;
 
             // Unknown/Other
             default -> {

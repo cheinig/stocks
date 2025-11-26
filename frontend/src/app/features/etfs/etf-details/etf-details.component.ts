@@ -363,12 +363,24 @@ export class EtfDetailsComponent implements OnInit {
     this.uploadSuccess.set(null);
 
     this.etfState.uploadAllocation(this.etfId, file).subscribe({
-      next: () => {
+      next: (statistics: any) => {
         this.uploadProgress.set(false);
-        this.uploadSuccess.set('Allocation erfolgreich importiert');
+
+        // Build success message with warnings
+        let message = `Allocation erfolgreich importiert: ${statistics.totalEntries} Einträge`;
+        if (statistics.warnings && statistics.warnings.length > 0) {
+          message += '\n\nWarnungen:\n' + statistics.warnings.join('\n');
+        }
+
+        this.uploadSuccess.set(message);
         this.selectedFile.set(null);
         this.loadAllocations();
-        this.snackBar.open('Allocation erfolgreich hochgeladen', 'OK', { duration: 3000 });
+
+        // Show snackbar with warnings if present
+        const snackBarMessage = statistics.warnings && statistics.warnings.length > 0
+          ? `Import erfolgreich mit ${statistics.warnings.length} Warnung(en)`
+          : 'Allocation erfolgreich hochgeladen';
+        this.snackBar.open(snackBarMessage, 'OK', { duration: 5000 });
       },
       error: (err: any) => {
         this.uploadProgress.set(false);
@@ -387,9 +399,21 @@ export class EtfDetailsComponent implements OnInit {
     this.etfState.refreshWebHoldings(this.etfId).subscribe({
       next: (response) => {
         this.uploadProgress.set(false);
-        this.uploadSuccess.set(response.message);
+
+        // Build message with warnings
+        let message = response.message;
+        if (response.warnings && response.warnings.length > 0) {
+          message += '\n\nWarnungen:\n' + response.warnings.join('\n');
+        }
+
+        this.uploadSuccess.set(message);
         this.loadAllocations();
-        this.snackBar.open(response.message, 'OK', { duration: 3000 });
+
+        // Show snackbar with warnings if present
+        const snackBarMessage = response.warnings && response.warnings.length > 0
+          ? `Aktualisierung erfolgreich mit ${response.warnings.length} Warnung(en)`
+          : response.message;
+        this.snackBar.open(snackBarMessage, 'OK', { duration: 5000 });
       },
       error: (err: any) => {
         this.uploadProgress.set(false);

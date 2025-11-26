@@ -80,8 +80,18 @@ public class FileUploadController {
             // Count stocks before import
             int stockCountBefore = countExistingStocks();
 
-            // Import allocation
-            List<ETFAllocation> allocations = allocationService.importAllocation(id, file);
+            // Import allocation with result containing unmapped sectors
+            com.stockstatus.dto.ImportResult importResult =
+                ((com.stockstatus.service.ETFAllocationServiceImpl) allocationService)
+                    .importAllocationWithResult(id, file);
+
+            List<ETFAllocation> allocations = importResult.getAllocations();
+            List<String> unmappedSectors = importResult.getUnmappedSectors();
+
+            log.info("Import result: {} allocations, {} unmapped sectors: {}",
+                allocations.size(),
+                unmappedSectors != null ? unmappedSectors.size() : 0,
+                unmappedSectors);
 
             // Count stocks after import
             int stockCountAfter = countExistingStocks();
@@ -103,6 +113,14 @@ public class FileUploadController {
             if (newStocksCreated > 0) {
                 statistics.getWarnings().add(
                     String.format("%d new stock(s) were automatically created during import", newStocksCreated)
+                );
+            }
+
+            // Add warning about unmapped sectors
+            if (unmappedSectors != null && !unmappedSectors.isEmpty()) {
+                String unmappedSectorsList = String.join(", ", unmappedSectors);
+                statistics.getWarnings().add(
+                    String.format("Unmapped sectors (could not be mapped to GICS): %s", unmappedSectorsList)
                 );
             }
 

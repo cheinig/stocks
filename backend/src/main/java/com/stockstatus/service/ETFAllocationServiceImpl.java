@@ -5,6 +5,7 @@ import com.stockstatus.domain.ETFAllocation;
 import com.stockstatus.domain.ImporterType;
 import com.stockstatus.domain.Stock;
 import com.stockstatus.dto.AllocationEntry;
+import com.stockstatus.dto.ImportResult;
 import com.stockstatus.repository.ETFAllocationRepository;
 import com.stockstatus.service.importer.FileImporter;
 import com.stockstatus.service.importer.ImporterFactory;
@@ -15,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of ETFAllocationService
@@ -34,6 +38,17 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
 
     @Override
     public List<ETFAllocation> importAllocation(Long etfId, MultipartFile file) {
+        ImportResult result = importAllocationWithResult(etfId, file);
+        return result.getAllocations();
+    }
+
+    /**
+     * Import allocation from file and return both allocations and unmapped sectors
+     * @param etfId the ETF ID
+     * @param file the uploaded file
+     * @return ImportResult containing allocations and unmapped sectors
+     */
+    public ImportResult importAllocationWithResult(Long etfId, MultipartFile file) {
         log.info("Importing allocation from file for ETF ID: {}", etfId);
 
         // Verify ETF exists
@@ -49,8 +64,19 @@ public class ETFAllocationServiceImpl implements ETFAllocationService {
         // Parse file
         List<AllocationEntry> entries = importer.parseFile(file);
 
+        // Collect unmapped sectors
+        Set<String> unmappedSectors = entries.stream()
+            .map(AllocationEntry::getOriginalSector)
+            .filter(originalSector -> originalSector != null && !originalSector.isEmpty())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
         // Save allocation
-        return saveAllocation(etfId, entries);
+        List<ETFAllocation> allocations = saveAllocation(etfId, entries);
+
+        return ImportResult.builder()
+            .allocations(allocations)
+            .unmappedSectors(new ArrayList<>(unmappedSectors))
+            .build();
     }
 
     @Override

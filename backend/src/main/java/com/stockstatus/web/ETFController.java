@@ -200,12 +200,18 @@ public class ETFController {
         log.info("REST request to refresh web holdings for ETF ID: {}", id);
 
         try {
-            etfService.refreshWebHoldings(id);
+            List<String> unmappedSectors = etfService.refreshWebHoldings(id);
 
-            Map<String, Object> response = Map.of(
-                "success", true,
-                "message", "Holdings successfully refreshed from web source"
-            );
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("success", true);
+            response.put("message", "Holdings successfully refreshed from web source");
+
+            if (!unmappedSectors.isEmpty()) {
+                response.put("warnings", List.of(
+                    String.format("Unmapped sectors (could not be mapped to GICS): %s",
+                        String.join(", ", unmappedSectors))
+                ));
+            }
 
             return ResponseEntity.ok(response);
 

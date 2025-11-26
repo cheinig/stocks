@@ -149,8 +149,9 @@ public interface ETFService {
     /**
      * Refresh holdings from web source for web-based importers
      * @param etfId the ETF ID
+     * @return List of unmapped sector names that could not be mapped to GICS
      * @throws com.stockstatus.exception.ETFNotFoundException if the ETF is not found
      * @throws IllegalArgumentException if the ETF is not using a web importer
      */
-    void refreshWebHoldings(Long etfId);
+    List<String> refreshWebHoldings(Long etfId);
 }

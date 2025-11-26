@@ -153,8 +153,9 @@ export class EtfStateService {
 
     return this.etfApi.uploadAllocation(etfId, file).pipe(
       tap({
-        next: (allocations: ETFAllocation[]) => {
-          this._currentAllocations.set(allocations);
+        next: (statistics) => {
+          // Reload allocations after successful upload
+          this.loadCurrentAllocation(etfId);
           this._isLoading.set(false);
         },
         error: (error) => {
@@ -231,7 +232,7 @@ export class EtfStateService {
 
     return this.etfApi.refreshWebHoldings(etfId).pipe(
       tap({
-        next: (response: { success: boolean; message: string }) => {
+        next: (response: { success: boolean; message: string; warnings?: string[] }) => {
           this._isLoading.set(false);
           // Reload allocations after successful refresh
           if (response.success) {

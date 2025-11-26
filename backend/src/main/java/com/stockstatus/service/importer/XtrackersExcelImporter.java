@@ -131,12 +131,20 @@ public class XtrackersExcelImporter implements FileImporter {
                     // Map industry classification to GICS standard
                     String mappedSector = mapSectorToGICS(industry);
 
+                    // Track original sector if it couldn't be mapped
+                    String originalSector = null;
+                    if ("Unbekannt".equals(mappedSector) && !industry.trim().isEmpty()) {
+                        originalSector = industry.trim();
+                        log.warn("Unmapped sector found for {}: '{}' -> 'Unbekannt'", name, originalSector);
+                    }
+
                     AllocationEntry entry = AllocationEntry.builder()
                         .isin(isin)
                         .name(name)
                         .percentage(percentage)
                         .country(countryCode)
                         .sector(mappedSector)
+                        .originalSector(originalSector)
                         .build();
 
                     entries.add(entry);

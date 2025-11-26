@@ -133,6 +133,7 @@ public class FidelityExcelImporter implements FileImporter {
                         .percentage(percentage)
                         .country(countryCode)
                         .sector(mappedSector)
+                        .originalSector("Unbekannt".equals(mappedSector) && !sector.trim().isEmpty() ? sector.trim() : null)
                         .build();
 
                     entries.add(entry);
