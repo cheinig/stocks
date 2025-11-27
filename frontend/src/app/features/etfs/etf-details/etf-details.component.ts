@@ -18,6 +18,7 @@ import { ErrorMessageComponent } from '../../../shared/components/error-message.
 import { FileUploadComponent } from '../../../shared/components/file-upload.component';
 import { ETFStatistics } from '../../../models/etf.model';
 import { CountryAllocation, SectorAllocation } from '../../../models/dashboard.model';
+import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
 
 @Component({
   selector: 'app-etf-details',
@@ -33,7 +34,8 @@ import { CountryAllocation, SectorAllocation } from '../../../models/dashboard.m
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     FileUploadComponent,
-    BaseChartDirective
+    BaseChartDirective,
+    SectorNamePipe
   ],
   templateUrl: './etf-details.component.html',
   styleUrls: ['./etf-details.component.scss']
@@ -217,9 +219,10 @@ export class EtfDetailsComponent implements OnInit {
     }
 
     const sortedAllocations = [...sectorAllocations].sort((a, b) => b.percentage - a.percentage);
+    const sectorPipe = new SectorNamePipe();
 
     const chartData: ChartData<'bar'> = {
-      labels: sortedAllocations.map(s => s.sector),
+      labels: sortedAllocations.map(s => sectorPipe.transform(s.sector)),
       datasets: [{
         label: 'Prozent',
         data: sortedAllocations.map(s => s.percentage),

@@ -9,6 +9,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { DashboardApiService } from '../../core/services/dashboard-api.service';
 import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, SectorAllocation } from '../../models/dashboard.model';
+import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,7 +21,8 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
     MatIconModule,
     MatTableModule,
     MatProgressSpinnerModule,
-    BaseChartDirective
+    BaseChartDirective,
+    SectorNamePipe
   ],
   template: `
     <div class="dashboard-container">
@@ -97,7 +99,7 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
 
                   <ng-container matColumnDef="sector">
                     <th mat-header-cell *matHeaderCellDef>Sektor</th>
-                    <td mat-cell *matCellDef="let stock">{{ stock.sector }}</td>
+                    <td mat-cell *matCellDef="let stock">{{ stock.sector | sectorName }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="totalPercentage">
@@ -178,7 +180,7 @@ import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, Sector
                 <div class="country-stats">
                   @for (sector of sectorAllocations() || []; track sector.sector) {
                     <div class="country-item">
-                      <span class="country-code">{{ sector.sector }}</span>
+                      <span class="country-code">{{ sector.sector | sectorName }}</span>
                       <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
                       <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
                     </div>
@@ -569,9 +571,10 @@ export class DashboardComponent implements OnInit {
     }
 
     const sortedAllocations = [...sectorAllocations].sort((a, b) => b.percentage - a.percentage);
+    const sectorPipe = new SectorNamePipe();
 
     const chartData: ChartData<'bar'> = {
-      labels: sortedAllocations.map(s => s.sector),
+      labels: sortedAllocations.map(s => sectorPipe.transform(s.sector)),
       datasets: [{
         label: 'Prozent',
         data: sortedAllocations.map(s => s.percentage),

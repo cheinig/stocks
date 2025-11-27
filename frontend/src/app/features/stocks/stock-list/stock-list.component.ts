@@ -18,6 +18,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog.component';
 import { CountryNamePipe } from '../../../shared/pipes/country-name.pipe';
+import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
 import { IconComponent } from '../../../shared/components/icon.component';
 
 @Component({
@@ -35,7 +36,8 @@ import { IconComponent } from '../../../shared/components/icon.component';
     DataTableComponent,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
-    CountryNamePipe
+    CountryNamePipe,
+    SectorNamePipe
   ],
   template: `
     <div class="stock-list-container">
@@ -81,6 +83,8 @@ import { IconComponent } from '../../../shared/components/icon.component';
           <ng-template #cellTemplate let-row let-column="column">
             @if (column === 'country') {
               {{ row.country | countryName }}
+            } @else if (column === 'sector') {
+              {{ row.sector | sectorName }}
             } @else {
               {{ row[column] }}
             }

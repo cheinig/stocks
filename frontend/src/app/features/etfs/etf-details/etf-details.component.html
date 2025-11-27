@@ -106,7 +106,7 @@
                 <div class="country-stats">
                   @for (sector of statistics()?.sectorAllocations || []; track sector.sector) {
                     <div class="country-item">
-                      <span class="country-code">{{ sector.sector }}</span>
+                      <span class="country-code">{{ sector.sector | sectorName }}</span>
                       <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
                       <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
                     </div>
