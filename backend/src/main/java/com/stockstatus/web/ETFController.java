@@ -2,9 +2,8 @@ package com.stockstatus.web;
 
 import com.stockstatus.domain.ETF;
 import com.stockstatus.domain.ETFAllocation;
-import com.stockstatus.dto.ETFAllocationResponseDTO;
-import com.stockstatus.dto.ETFRequestDTO;
-import com.stockstatus.dto.ETFResponseDTO;
+import com.stockstatus.domain.Stock;
+import com.stockstatus.dto.*;
 import com.stockstatus.service.ETFService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -224,6 +224,100 @@ public class ETFController {
             );
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Get statistics for an ETF including country and sector allocations
+     * GET /api/etfs/{id}/statistics
+     */
+    @GetMapping("/{id}/statistics")
+    public ResponseEntity<ETFStatistics> getETFStatistics(@PathVariable Long id) {
+        log.info("REST request to get statistics for ETF ID: {}", id);
+
+        ETF etf = etfService.findById(id);
+        List<ETFAllocation> allocations = etfService.getCurrentAllocation(id);
+
+        // Calculate country allocations
+        Map<String, CountryAccumulator> countryMap = new HashMap<>();
+        for (ETFAllocation allocation : allocations) {
+            Stock stock = allocation.getStock();
+            String country = stock.getCountry() != null ? stock.getCountry() : "XX";
+            countryMap.computeIfAbsent(country, k -> new CountryAccumulator(k))
+                .addPercentage(allocation.getPercentage());
+        }
+
+        List<CountryAllocation> countryAllocations = countryMap.values().stream()
+            .map(acc -> CountryAllocation.builder()
+                .countryCode(acc.countryCode)
+                .percentage(acc.totalPercentage.setScale(2, RoundingMode.HALF_UP))
+                .stockCount(acc.stockCount)
+                .build())
+            .sorted((a, b) -> b.getPercentage().compareTo(a.getPercentage()))
+            .collect(Collectors.toList());
+
+        // Calculate sector allocations
+        Map<String, SectorAccumulator> sectorMap = new HashMap<>();
+        for (ETFAllocation allocation : allocations) {
+            Stock stock = allocation.getStock();
+            String sector = stock.getSector() != null && !stock.getSector().isEmpty()
+                ? stock.getSector() : "Unbekannt";
+            sectorMap.computeIfAbsent(sector, k -> new SectorAccumulator(k))
+                .addPercentage(allocation.getPercentage());
+        }
+
+        List<SectorAllocation> sectorAllocations = sectorMap.values().stream()
+            .map(acc -> SectorAllocation.builder()
+                .sector(acc.sector)
+                .percentage(acc.totalPercentage.setScale(2, RoundingMode.HALF_UP).doubleValue())
+                .stockCount(acc.stockCount)
+                .build())
+            .sorted((a, b) -> Double.compare(b.getPercentage(), a.getPercentage()))
+            .collect(Collectors.toList());
+
+        // Count unique countries
+        int totalCountries = (int) countryAllocations.size();
+
+        ETFStatistics statistics = ETFStatistics.builder()
+            .etfId(etf.getId())
+            .etfName(etf.getName())
+            .totalStocks(allocations.size())
+            .totalCountries(totalCountries)
+            .countryAllocations(countryAllocations)
+            .sectorAllocations(sectorAllocations)
+            .build();
+
+        return ResponseEntity.ok(statistics);
+    }
+
+    // Helper classes for accumulation
+    private static class CountryAccumulator {
+        String countryCode;
+        BigDecimal totalPercentage = BigDecimal.ZERO;
+        int stockCount = 0;
+
+        CountryAccumulator(String countryCode) {
+            this.countryCode = countryCode;
+        }
+
+        void addPercentage(BigDecimal percentage) {
+            this.totalPercentage = this.totalPercentage.add(percentage);
+            this.stockCount++;
+        }
+    }
+
+    private static class SectorAccumulator {
+        String sector;
+        BigDecimal totalPercentage = BigDecimal.ZERO;
+        int stockCount = 0;
+
+        SectorAccumulator(String sector) {
+            this.sector = sector;
+        }
+
+        void addPercentage(BigDecimal percentage) {
+            this.totalPercentage = this.totalPercentage.add(percentage);
+            this.stockCount++;
         }
     }
 }

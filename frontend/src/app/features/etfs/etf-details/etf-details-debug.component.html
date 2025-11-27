@@ -1,0 +1,30 @@
+<div class="etf-details-container">
+  <div class="header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>ETF-Details (Debug)</h1>
+  </div>
+
+  <p>Debug Info:</p>
+  <ul>
+    <li>ETF ID: {{ etfId }}</li>
+    <li>Is Loading: {{ etfState.isLoading() }}</li>
+    <li>Has Error: {{ etfState.error() }}</li>
+    <li>Has ETF: {{ etfState.currentEtf() ? 'YES' : 'NO' }}</li>
+    <li>Has Allocations: {{ etfState.currentAllocations()?.length || 0 }}</li>
+    <li>Has Statistics: {{ statistics() ? 'YES' : 'NO' }}</li>
+  </ul>
+
+  @if (etfState.currentEtf()) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ etfState.currentEtf()?.name }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>ISIN: {{ etfState.currentEtf()?.isin }}</p>
+        <p>Importer: {{ etfState.currentEtf()?.importerType }}</p>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

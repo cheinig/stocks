@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ETF, ETFRequest, ETFResponse, ImportStatistics } from '../../models/etf.model';
+import { ETF, ETFRequest, ETFResponse, ImportStatistics, ETFStatistics } from '../../models/etf.model';
 import { ETFAllocation } from '../../models/allocation.model';
 import { Page, PageRequest } from '../../models/page.model';
 
@@ -73,5 +73,9 @@ export class EtfApiService {
 
   refreshWebHoldings(etfId: number): Observable<{ success: boolean; message: string; warnings?: string[] }> {
     return this.http.post<{ success: boolean; message: string; warnings?: string[] }>(`${this.baseUrl}/${etfId}/refresh`, {});
+  }
+
+  getStatistics(etfId: number): Observable<ETFStatistics> {
+    return this.http.get<ETFStatistics>(`${this.baseUrl}/${etfId}/statistics`);
   }
 }

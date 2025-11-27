@@ -1,0 +1,243 @@
+<div class="etf-details-container">
+  <div class="header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>ETF-Details</h1>
+  </div>
+
+  @if (etfState.isLoading()) {
+    <app-loading-spinner></app-loading-spinner>
+  } @else if (etfState.error()) {
+    <app-error-message
+      [title]="'Fehler beim Laden des ETFs'"
+      [message]="etfState.error() || ''"
+      [onRetry]="loadEtf.bind(this)">
+    </app-error-message>
+  } @else if (etfState.currentEtf()) {
+    <!-- ETF Info Card -->
+    <mat-card class="etf-info-card">
+      <mat-card-header>
+        <mat-card-title>{{ etfState.currentEtf()?.name }}</mat-card-title>
+        <mat-card-subtitle>{{ etfState.currentEtf()?.isin }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Importer-Typ:</span>
+            <span class="value">{{ etfState.currentEtf()?.importerType }}</span>
+          </div>
+          @if (statistics()) {
+            <div class="info-item">
+              <span class="label">Anzahl Aktien:</span>
+              <span class="value">{{ statistics()?.totalStocks || 0 }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Anzahl Länder:</span>
+              <span class="value">{{ statistics()?.totalCountries || 0 }}</span>
+            </div>
+          }
+          @if (etfState.currentEtf()?.webUrl) {
+            <div class="info-item">
+              <span class="label">Web URL:</span>
+              <span class="value">{{ etfState.currentEtf()?.webUrl }}</span>
+            </div>
+          }
+        </div>
+        <div class="actions">
+          <button mat-button color="primary" (click)="editEtf()">
+            <mat-icon>edit</mat-icon>
+            Bearbeiten
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Charts Row -->
+    @if (etfState.currentAllocations() && etfState.currentAllocations().length > 0) {
+      @if (statistics() && !loadingStatistics()) {
+        <div class="charts-grid">
+          <!-- Country Allocation Card -->
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>Länder-Allokation</mat-card-title>
+              <mat-card-subtitle>Verteilung nach Ländern</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (pieChartData()) {
+                <div class="chart-wrapper">
+                  <canvas
+                    baseChart
+                    [data]="pieChartData()!"
+                    [type]="pieChartType"
+                    [options]="pieChartOptions">
+                  </canvas>
+                </div>
+                <div class="country-stats">
+                  @for (country of getTopCountries(); track country.countryCode) {
+                    <div class="country-item">
+                      <span class="country-flag">{{ getCountryFlag(country.countryCode) }}</span>
+                      <span class="country-code">{{ country.countryCode }}</span>
+                      <span class="country-percentage">{{ country.percentage | number:'1.2-2' }}%</span>
+                      <span class="country-stocks">({{ country.stockCount }} Aktien)</span>
+                    </div>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Sector Allocation Card -->
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>Branchen-Allokation</mat-card-title>
+              <mat-card-subtitle>Verteilung nach Branchen</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (sectorChartData()) {
+                <div class="chart-wrapper">
+                  <canvas
+                    baseChart
+                    [data]="sectorChartData()!"
+                    [type]="sectorChartType"
+                    [options]="sectorChartOptions">
+                  </canvas>
+                </div>
+                <div class="country-stats">
+                  @for (sector of statistics()?.sectorAllocations || []; track sector.sector) {
+                    <div class="country-item">
+                      <span class="country-code">{{ sector.sector }}</span>
+                      <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
+                      <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
+                    </div>
+                  }
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+      } @else if (loadingStatistics()) {
+        <mat-card>
+          <mat-card-content>
+            <div class="loading-container">
+              <app-loading-spinner></app-loading-spinner>
+              <p>Lade Statistiken...</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    }
+
+    <!-- Web Importer Refresh Card -->
+    @if (isWebImporterType()) {
+      <mat-card class="refresh-card">
+        <mat-card-header>
+          <mat-card-title>Holdings aktualisieren</mat-card-title>
+          <mat-card-subtitle>
+            Aktuelle Holdings von der Web-Quelle laden
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="refresh-actions">
+            <button mat-raised-button color="primary" (click)="onRefresh()" [disabled]="uploadProgress()">
+              <mat-icon>refresh</mat-icon>
+              @if (uploadProgress()) {
+                Lädt...
+              } @else {
+                Holdings aktualisieren
+              }
+            </button>
+          </div>
+
+          @if (uploadProgress()) {
+            <div class="upload-progress">
+              <mat-icon>hourglass_empty</mat-icon>
+              <span>Lade Holdings...</span>
+            </div>
+          }
+
+          @if (uploadSuccess()) {
+            <div class="upload-success">
+              <mat-icon>check</mat-icon>
+              <span>{{ uploadSuccess() }}</span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <!-- File Upload Card -->
+      <mat-card class="upload-card">
+        <mat-card-header>
+          <mat-card-title>Allocation-Daten hochladen</mat-card-title>
+          <mat-card-subtitle>
+            Laden Sie eine Datei mit der Zusammensetzung des ETFs hoch (CSV oder Excel)
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-file-upload
+            [acceptedTypes]="'.csv,.xlsx,.xls'"
+            [maxSizeInMB]="10"
+            (fileSelected)="onFileSelected($event)"
+            (uploadClick)="onUpload()">
+          </app-file-upload>
+
+          @if (uploadProgress()) {
+            <div class="upload-progress">
+              <mat-icon>hourglass_empty</mat-icon>
+              <span>Upload läuft...</span>
+            </div>
+          }
+
+          @if (uploadSuccess()) {
+            <div class="upload-success">
+              <mat-icon>check</mat-icon>
+              <span>{{ uploadSuccess() }}</span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Current Allocation Card -->
+    @if (etfState.currentAllocations() && etfState.currentAllocations().length > 0) {
+      <mat-card class="allocation-card">
+        <mat-card-header>
+          <mat-card-title>Aktuelle Allocation</mat-card-title>
+          <mat-card-subtitle>
+            {{ etfState.currentAllocations().length }} Positionen
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="table-container">
+            <table mat-table [dataSource]="etfState.currentAllocations()">
+              <ng-container matColumnDef="stockName">
+                <th mat-header-cell *matHeaderCellDef>Name</th>
+                <td mat-cell *matCellDef="let allocation">{{ allocation.stockName || allocation.stock?.name || 'N/A' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="stockIsin">
+                <th mat-header-cell *matHeaderCellDef>ISIN</th>
+                <td mat-cell *matCellDef="let allocation">{{ allocation.stockIsin || allocation.stock?.isin || 'N/A' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="percentage">
+                <th mat-header-cell *matHeaderCellDef>Prozent</th>
+                <td mat-cell *matCellDef="let allocation">{{ allocation.percentage | number:'1.2-2' }}%</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="allocationColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: allocationColumns;"></tr>
+            </table>
+          </div>
+
+          <div class="allocation-actions">
+            <button mat-button color="primary" (click)="showHistory()">
+              <mat-icon>history</mat-icon>
+              Historie anzeigen
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

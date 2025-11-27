@@ -1,4 +1,5 @@
 import { ImporterType } from './enums';
+import { CountryAllocation, SectorAllocation } from './dashboard.model';
 
 export { ImporterType };
 
@@ -44,4 +45,13 @@ export interface ImportStatistics {
   warnings: string[];
   success: boolean;
   errorMessage?: string;
+}
+
+export interface ETFStatistics {
+  etfId: number;
+  etfName: string;
+  totalStocks: number;
+  totalCountries: number;
+  countryAllocations: CountryAllocation[];
+  sectorAllocations: SectorAllocation[];
 }

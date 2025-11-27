@@ -6,13 +6,18 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
+import { EtfApiService } from '../../../core/services/etf-api.service';
 import { isWebImporter } from '../../../models/enums';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
 import { FileUploadComponent } from '../../../shared/components/file-upload.component';
-import { IconComponent } from '../../../shared/components/icon.component';
+import { ETFStatistics } from '../../../models/etf.model';
+import { CountryAllocation, SectorAllocation } from '../../../models/dashboard.model';
 
 @Component({
   selector: 'app-etf-details',
@@ -24,300 +29,89 @@ import { IconComponent } from '../../../shared/components/icon.component';
     MatSnackBarModule,
     MatDialogModule,
     MatTableModule,
-    IconComponent,
+    MatIconModule,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
-    FileUploadComponent
+    FileUploadComponent,
+    BaseChartDirective
   ],
-  template: `
-    <div class="etf-details-container">
-      <div class="header">
-        <button mat-icon-button (click)="goBack()">
-          <mat-icon fontIcon="arrow_back"></mat-icon>
-        </button>
-        <h1>ETF-Details</h1>
-      </div>
-
-      @if (etfState.isLoading()) {
-        <app-loading-spinner></app-loading-spinner>
-      } @else if (etfState.error()) {
-        <app-error-message
-          [title]="'Fehler beim Laden des ETFs'"
-          [message]="etfState.error() || ''"
-          [onRetry]="loadEtf.bind(this)">
-        </app-error-message>
-      } @else if (etfState.currentEtf()) {
-        <!-- ETF Info Card -->
-        <mat-card class="etf-info-card">
-          <mat-card-header>
-            <mat-card-title>{{ etfState.currentEtf()?.name }}</mat-card-title>
-            <mat-card-subtitle>{{ etfState.currentEtf()?.isin }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">Importer-Typ:</span>
-                <span class="value">{{ etfState.currentEtf()?.importerType }}</span>
-              </div>
-              @if (etfState.currentEtf()?.webUrl) {
-                <div class="info-item">
-                  <span class="label">Web URL:</span>
-                  <span class="value">{{ etfState.currentEtf()?.webUrl }}</span>
-                </div>
-              }
-            </div>
-            <div class="actions">
-              <button mat-button color="primary" (click)="editEtf()">
-                <mat-icon fontIcon="edit"></mat-icon>
-                Bearbeiten
-              </button>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Web Importer Refresh Card -->
-        @if (isWebImporterType()) {
-          <mat-card class="refresh-card">
-            <mat-card-header>
-              <mat-card-title>Holdings aktualisieren</mat-card-title>
-              <mat-card-subtitle>
-                Aktuelle Holdings von der Web-Quelle laden
-              </mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="refresh-actions">
-                <button mat-raised-button color="primary" (click)="onRefresh()" [disabled]="uploadProgress()">
-                  <mat-icon fontIcon="refresh"></mat-icon>
-                  @if (uploadProgress()) {
-                    Lädt...
-                  } @else {
-                    Holdings aktualisieren
-                  }
-                </button>
-              </div>
-
-              @if (uploadProgress()) {
-                <div class="upload-progress">
-                  <mat-icon fontIcon="hourglass_empty"></mat-icon>
-                  <span>Lade Holdings...</span>
-                </div>
-              }
-
-              @if (uploadSuccess()) {
-                <div class="upload-success">
-                  <mat-icon fontIcon="check"></mat-icon>
-                  <span>{{ uploadSuccess() }}</span>
-                </div>
-              }
-            </mat-card-content>
-          </mat-card>
-        } @else {
-          <!-- File Upload Card -->
-          <mat-card class="upload-card">
-            <mat-card-header>
-              <mat-card-title>Allocation-Daten hochladen</mat-card-title>
-              <mat-card-subtitle>
-                Laden Sie eine Datei mit der Zusammensetzung des ETFs hoch (CSV oder Excel)
-              </mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <app-file-upload
-                [acceptedTypes]="'.csv,.xlsx,.xls'"
-                [maxSizeInMB]="10"
-                (fileSelected)="onFileSelected($event)"
-                (uploadClick)="onUpload()">
-              </app-file-upload>
-
-              @if (uploadProgress()) {
-                <div class="upload-progress">
-                  <mat-icon fontIcon="hourglass_empty"></mat-icon>
-                  <span>Upload läuft...</span>
-                </div>
-              }
-
-              @if (uploadSuccess()) {
-                <div class="upload-success">
-                  <mat-icon fontIcon="check"></mat-icon>
-                  <span>{{ uploadSuccess() }}</span>
-                </div>
-              }
-            </mat-card-content>
-          </mat-card>
-        }
-
-        <!-- Current Allocation Card -->
-        @if (etfState.currentAllocations() && etfState.currentAllocations().length > 0) {
-          <mat-card class="allocation-card">
-            <mat-card-header>
-              <mat-card-title>Aktuelle Allocation</mat-card-title>
-              <mat-card-subtitle>
-                {{ etfState.currentAllocations().length }} Positionen
-              </mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="table-container">
-                <table mat-table [dataSource]="etfState.currentAllocations()">
-                  <ng-container matColumnDef="stockName">
-                    <th mat-header-cell *matHeaderCellDef>Name</th>
-                    <td mat-cell *matCellDef="let allocation">{{ allocation.stockName || allocation.stock?.name || 'N/A' }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="stockIsin">
-                    <th mat-header-cell *matHeaderCellDef>ISIN</th>
-                    <td mat-cell *matCellDef="let allocation">{{ allocation.stockIsin || allocation.stock?.isin || 'N/A' }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="percentage">
-                    <th mat-header-cell *matHeaderCellDef>Prozent</th>
-                    <td mat-cell *matCellDef="let allocation">{{ allocation.percentage | number:'1.2-2' }}%</td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="allocationColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: allocationColumns;"></tr>
-                </table>
-              </div>
-
-              <div class="allocation-actions">
-                <button mat-button color="primary" (click)="showHistory()">
-                  <mat-icon fontIcon="history"></mat-icon>
-                  Historie anzeigen
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        }
-      }
-    </div>
-  `,
-  styles: [`
-    .etf-details-container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-      font-weight: 500;
-    }
-
-    mat-card {
-      margin-bottom: 2rem;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .label {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.6);
-    }
-
-    .value {
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .actions {
-      display: flex;
-      gap: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .upload-progress,
-    .upload-success {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      padding: 1rem;
-      border-radius: 4px;
-    }
-
-    .upload-progress {
-      background-color: rgba(33, 150, 243, 0.1);
-      color: #2196f3;
-    }
-
-    .upload-success {
-      background-color: rgba(76, 175, 80, 0.1);
-      color: #4caf50;
-    }
-
-    .table-container {
-      width: 100%;
-      overflow-x: auto;
-      margin-bottom: 1rem;
-    }
-
-    .mat-mdc-table {
-      width: 100%;
-    }
-
-    .allocation-actions {
-      display: flex;
-      justify-content: flex-end;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .refresh-actions {
-      display: flex;
-      justify-content: center;
-      padding: 2rem 0;
-    }
-
-    .refresh-actions button {
-      min-width: 250px;
-    }
-
-    @media (max-width: 768px) {
-      .info-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .actions {
-        flex-direction: column;
-      }
-
-      .actions button {
-        width: 100%;
-      }
-    }
-  `]
+  templateUrl: './etf-details.component.html',
+  styleUrls: ['./etf-details.component.scss']
 })
 export class EtfDetailsComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private etfApi = inject(EtfApiService);
   etfState = inject(EtfStateService);
 
   etfId?: number;
   selectedFile = signal<File | null>(null);
   uploadProgress = signal(false);
   uploadSuccess = signal<string | null>(null);
+  statistics = signal<ETFStatistics | null>(null);
+  loadingStatistics = signal(false);
+
+  pieChartData = signal<ChartData<'pie'> | null>(null);
+  sectorChartData = signal<ChartData<'bar'> | null>(null);
 
   allocationColumns = ['stockName', 'stockIsin', 'percentage'];
+
+  pieChartType: ChartType = 'pie';
+  pieChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            return `${label}: ${value.toFixed(2)}%`;
+          }
+        }
+      }
+    }
+  };
+
+  sectorChartType: ChartType = 'bar';
+  sectorChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const value = context.parsed.y || 0;
+            return `${value.toFixed(2)}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Prozent (%)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Branche'
+        }
+      }
+    }
+  };
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -333,6 +127,7 @@ export class EtfDetailsComponent implements OnInit {
     this.etfState.loadEtfById(this.etfId).subscribe({
       next: () => {
         this.loadAllocations();
+        this.loadStatistics();
       },
       error: () => {
         this.snackBar.open('Fehler beim Laden des ETFs', 'OK', { duration: 3000 });
@@ -348,6 +143,138 @@ export class EtfDetailsComponent implements OnInit {
         this.snackBar.open('Fehler beim Laden der Allocations', 'OK', { duration: 3000 });
       }
     });
+  }
+
+  loadStatistics(): void {
+    if (!this.etfId) return;
+
+    this.loadingStatistics.set(true);
+    this.etfApi.getStatistics(this.etfId).subscribe({
+      next: (stats) => {
+        this.statistics.set(stats);
+        if (stats.countryAllocations && stats.countryAllocations.length > 0) {
+          this.updateChartData(stats.countryAllocations);
+        }
+        if (stats.sectorAllocations && stats.sectorAllocations.length > 0) {
+          this.updateSectorChartData(stats.sectorAllocations);
+        }
+        this.loadingStatistics.set(false);
+      },
+      error: (err) => {
+        this.loadingStatistics.set(false);
+        console.error('Error loading statistics:', err);
+        // Don't show error if ETF has no allocations yet
+        if (err.status !== 404) {
+          this.snackBar.open('Fehler beim Laden der Statistiken', 'OK', { duration: 3000 });
+        }
+      }
+    });
+  }
+
+  updateChartData(countryAllocations: CountryAllocation[]): void {
+    if (!countryAllocations || countryAllocations.length === 0) {
+      this.pieChartData.set(null);
+      return;
+    }
+
+    const sortedAllocations = [...countryAllocations].sort((a, b) => Number(b.percentage) - Number(a.percentage));
+
+    // Show countries with at least 0.3% weight individually, rest as "Others"
+    const minPercentageThreshold = 0.3;
+
+    const significantAllocations = sortedAllocations.filter(c => Number(c.percentage) >= minPercentageThreshold);
+    const insignificantAllocations = sortedAllocations.filter(c => Number(c.percentage) < minPercentageThreshold);
+
+    let labels: string[];
+    let data: number[];
+
+    if (insignificantAllocations.length === 0) {
+      labels = significantAllocations.map(c => c.countryCode);
+      data = significantAllocations.map(c => Number(c.percentage));
+    } else {
+      const othersPercentage = insignificantAllocations.reduce((sum, c) => sum + Number(c.percentage), 0);
+      labels = [...significantAllocations.map(c => c.countryCode), 'Sonstige'];
+      data = [...significantAllocations.map(c => Number(c.percentage)), othersPercentage];
+    }
+
+    const chartData: ChartData<'pie'> = {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: this.generateColors(labels.length),
+        borderWidth: 2,
+        borderColor: '#1a1a1a'
+      }]
+    };
+
+    this.pieChartData.set(chartData);
+  }
+
+  updateSectorChartData(sectorAllocations: SectorAllocation[]): void {
+    if (!sectorAllocations || sectorAllocations.length === 0) {
+      this.sectorChartData.set(null);
+      return;
+    }
+
+    const sortedAllocations = [...sectorAllocations].sort((a, b) => b.percentage - a.percentage);
+
+    const chartData: ChartData<'bar'> = {
+      labels: sortedAllocations.map(s => s.sector),
+      datasets: [{
+        label: 'Prozent',
+        data: sortedAllocations.map(s => s.percentage),
+        backgroundColor: this.generateColors(sortedAllocations.length),
+        borderWidth: 1,
+        borderColor: '#1a1a1a'
+      }]
+    };
+
+    this.sectorChartData.set(chartData);
+  }
+
+  generateColors(count: number): string[] {
+    const baseColors = [
+      '#B4A7D6', '#A8D8B9', '#FFD6A5', '#FFADAD', '#D5AAFF',
+      '#9DB4FF', '#FFF5BA', '#A2E4E8', '#FFB3D9', '#B2DFD5',
+      '#FFCCB5', '#C5B3E6', '#C9E4C5', '#FFE5D0', '#E4C4D8',
+      '#B5E7E7', '#F7D794', '#DCC6E0', '#AED9E0', '#FFD3B5',
+    ];
+
+    const colors: string[] = [];
+    for (let i = 0; i < count; i++) {
+      colors.push(baseColors[i % baseColors.length]);
+    }
+    return colors;
+  }
+
+  getCountryFlag(countryCode: string): string {
+    if (countryCode === 'Sonstige') {
+      return '🌍';
+    }
+
+    const flagMap: { [key: string]: string } = {
+      'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽',
+      'DE': '🇩🇪', 'FR': '🇫🇷', 'GB': '🇬🇧', 'IT': '🇮🇹', 'ES': '🇪🇸',
+      'NL': '🇳🇱', 'CH': '🇨🇭', 'BE': '🇧🇪', 'AT': '🇦🇹', 'SE': '🇸🇪',
+      'NO': '🇳🇴', 'DK': '🇩🇰', 'FI': '🇫🇮', 'IE': '🇮🇪', 'PL': '🇵🇱',
+      'PT': '🇵🇹', 'GR': '🇬🇷', 'CZ': '🇨🇿', 'RO': '🇷🇴', 'HU': '🇭🇺',
+      'LU': '🇱🇺',
+      'JP': '🇯🇵', 'CN': '🇨🇳', 'HK': '🇭🇰', 'SG': '🇸🇬', 'KR': '🇰🇷',
+      'IN': '🇮🇳', 'TW': '🇹🇼', 'TH': '🇹🇭', 'ID': '🇮🇩', 'MY': '🇲🇾',
+      'PH': '🇵🇭', 'VN': '🇻🇳',
+      'AE': '🇦🇪', 'SA': '🇸🇦', 'IL': '🇮🇱', 'TR': '🇹🇷', 'KW': '🇰🇼',
+      'QA': '🇶🇦', 'BH': '🇧🇭', 'OM': '🇴🇲',
+      'AU': '🇦🇺', 'NZ': '🇳🇿',
+      'BR': '🇧🇷', 'AR': '🇦🇷', 'CL': '🇨🇱', 'CO': '🇨🇴', 'PE': '🇵🇪',
+      'ZA': '🇿🇦', 'EG': '🇪🇬', 'NG': '🇳🇬', 'KE': '🇰🇪', 'XX': '🏳️'
+    };
+
+    return flagMap[countryCode] || '🏳️';
+  }
+
+  getTopCountries(): CountryAllocation[] {
+    const countries = this.statistics()?.countryAllocations || [];
+    return countries.slice(0, 10);
   }
 
   onFileSelected(file: File): void {
@@ -366,7 +293,6 @@ export class EtfDetailsComponent implements OnInit {
       next: (statistics: any) => {
         this.uploadProgress.set(false);
 
-        // Build success message with warnings
         let message = `Allocation erfolgreich importiert: ${statistics.totalEntries} Einträge`;
         if (statistics.warnings && statistics.warnings.length > 0) {
           message += '\n\nWarnungen:\n' + statistics.warnings.join('\n');
@@ -375,8 +301,8 @@ export class EtfDetailsComponent implements OnInit {
         this.uploadSuccess.set(message);
         this.selectedFile.set(null);
         this.loadAllocations();
+        this.loadStatistics();
 
-        // Show snackbar with warnings if present
         const snackBarMessage = statistics.warnings && statistics.warnings.length > 0
           ? `Import erfolgreich mit ${statistics.warnings.length} Warnung(en)`
           : 'Allocation erfolgreich hochgeladen';
@@ -400,7 +326,6 @@ export class EtfDetailsComponent implements OnInit {
       next: (response) => {
         this.uploadProgress.set(false);
 
-        // Build message with warnings
         let message = response.message;
         if (response.warnings && response.warnings.length > 0) {
           message += '\n\nWarnungen:\n' + response.warnings.join('\n');
@@ -408,8 +333,8 @@ export class EtfDetailsComponent implements OnInit {
 
         this.uploadSuccess.set(message);
         this.loadAllocations();
+        this.loadStatistics();
 
-        // Show snackbar with warnings if present
         const snackBarMessage = response.warnings && response.warnings.length > 0
           ? `Aktualisierung erfolgreich mit ${response.warnings.length} Warnung(en)`
           : response.message;
@@ -435,7 +360,6 @@ export class EtfDetailsComponent implements OnInit {
   }
 
   showHistory(): void {
-    // TODO: Implement history dialog
     this.snackBar.open('Historie-Ansicht wird in Phase 9.4 implementiert', 'OK', { duration: 3000 });
   }
 
