@@ -64,12 +64,15 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Page<Stock> searchByName(@Param("name") String name, Pageable pageable);
 
     /**
-     * Search stocks by name or ISIN (case-insensitive, partial match)
+     * Search stocks by name, ISIN, sector or country (case-insensitive, partial match)
      * @param query the search query
      * @param pageable pagination information
      * @return Page of matching stocks
      */
-    @Query("SELECT s FROM Stock s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(s.isin) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("SELECT s FROM Stock s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(s.isin) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(s.sector) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(s.country) LIKE LOWER(CONCAT('%', :query, '%'))")
     Page<Stock> searchByNameOrIsin(@Param("query") String query, Pageable pageable);
 
     /**

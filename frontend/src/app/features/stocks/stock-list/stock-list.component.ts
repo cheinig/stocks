@@ -49,8 +49,8 @@ import { IconComponent } from '../../../shared/components/icon.component';
 
       <div class="search-bar">
         <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Suche nach Name oder ISIN</mat-label>
-          <input matInput [formControl]="searchControl" placeholder="z.B. Apple oder US0378331005">
+          <mat-label>Suche nach Name, ISIN, Sektor oder Land</mat-label>
+          <input matInput [formControl]="searchControl" placeholder="z.B. Apple, US0378331005, Technology oder DE">
           <mat-icon matPrefix fontIcon="search"></mat-icon>
           @if (searchControl.value) {
             <button matSuffix mat-icon-button (click)="clearSearch()">
