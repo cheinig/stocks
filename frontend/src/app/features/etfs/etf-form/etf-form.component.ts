@@ -196,11 +196,6 @@ export class EtfFormComponent implements OnInit {
   etfForm: FormGroup;
 
   importerTypes = [
-    { value: ImporterType.GENERIC_CSV, label: 'Generic CSV' },
-    { value: ImporterType.GENERIC_EXCEL, label: 'Generic Excel' },
-    { value: ImporterType.ISHARES_CSV, label: 'iShares CSV' },
-    { value: ImporterType.VANGUARD_CSV, label: 'Vanguard CSV' },
-    { value: ImporterType.SPDR_CSV, label: 'SPDR CSV' },
     { value: ImporterType.FIDELITY, label: 'Fidelity Excel' },
     { value: ImporterType.XTRACKERS, label: 'Xtrackers Excel' },
     { value: ImporterType.VANECK, label: 'VanEck Excel' },

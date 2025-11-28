@@ -4,11 +4,6 @@ export enum AssetType {
 }
 
 export enum ImporterType {
-  GENERIC_CSV = 'GENERIC_CSV',
-  GENERIC_EXCEL = 'GENERIC_EXCEL',
-  ISHARES_CSV = 'ISHARES_CSV',
-  VANGUARD_CSV = 'VANGUARD_CSV',
-  SPDR_CSV = 'SPDR_CSV',
   FIDELITY = 'FIDELITY',
   XTRACKERS = 'XTRACKERS',
   VANECK = 'VANECK',
