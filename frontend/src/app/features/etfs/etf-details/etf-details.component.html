@@ -209,7 +209,7 @@
         </mat-card-header>
         <mat-card-content>
           <div class="table-container">
-            <table mat-table [dataSource]="etfState.currentAllocations()">
+            <table mat-table [dataSource]="sortedAllocations()">
               <ng-container matColumnDef="stockName">
                 <th mat-header-cell *matHeaderCellDef>Name</th>
                 <td mat-cell *matCellDef="let allocation">{{ allocation.stockName || allocation.stock?.name || 'N/A' }}</td>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -59,6 +59,12 @@ export class EtfDetailsComponent implements OnInit {
   sectorChartData = signal<ChartData<'bar'> | null>(null);
 
   allocationColumns = ['stockName', 'stockIsin', 'percentage'];
+
+  // Sorted allocations by percentage descending
+  sortedAllocations = computed(() => {
+    const allocations = this.etfState.currentAllocations();
+    return [...allocations].sort((a, b) => b.percentage - a.percentage);
+  });
 
   pieChartType: ChartType = 'pie';
   pieChartOptions: ChartConfiguration['options'] = {
