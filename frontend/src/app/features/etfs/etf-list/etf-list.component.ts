@@ -152,7 +152,7 @@ export class EtfListComponent implements OnInit {
     },
     {
       icon: 'delete',
-      tooltip: 'L�schen',
+      tooltip: 'Löschen',
       color: 'warn',
       action: (etf) => this.deleteEtf(etf)
     }
@@ -199,9 +199,9 @@ export class EtfListComponent implements OnInit {
 
   deleteEtf(etf: ETF): void {
     const dialogData: ConfirmDialogData = {
-      title: 'ETF l�schen',
-      message: `M�chten Sie den ETF "${etf.name}" (${etf.isin}) wirklich l�schen? Alle zugeh�rigen Allocations werden ebenfalls gel�scht.`,
-      confirmText: 'L�schen',
+      title: 'ETF löschen',
+      message: `Möchten Sie den ETF "${etf.name}" (${etf.isin}) wirklich löschen? Alle zugehörigen Allocations werden ebenfalls gelöscht.`,
+      confirmText: 'Löschen',
       cancelText: 'Abbrechen',
       confirmColor: 'warn'
     };
@@ -215,11 +215,11 @@ export class EtfListComponent implements OnInit {
       if (confirmed) {
         this.etfState.deleteEtf(etf.id).subscribe({
           next: () => {
-            this.snackBar.open('ETF erfolgreich gel�scht', 'OK', { duration: 3000 });
+            this.snackBar.open('ETF erfolgreich gelöscht', 'OK', { duration: 3000 });
             this.loadEtfs();
           },
           error: () => {
-            this.snackBar.open('Fehler beim L�schen des ETFs', 'OK', { duration: 3000 });
+            this.snackBar.open('Fehler beim Löschen des ETFs', 'OK', { duration: 3000 });
           }
         });
       }
