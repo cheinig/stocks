@@ -242,8 +242,9 @@ public class ETFServiceImpl implements ETFService {
             );
         }
 
-        // Verify webDataId is configured
-        if (etf.getWebDataId() == null || etf.getWebDataId().isEmpty()) {
+        // Verify webDataId is configured (only for importers that require it)
+        if (etf.getImporterType().requiresWebDataId() &&
+            (etf.getWebDataId() == null || etf.getWebDataId().isEmpty())) {
             throw new IllegalArgumentException(
                 "ETF with ID " + etfId + " does not have a web data ID configured"
             );

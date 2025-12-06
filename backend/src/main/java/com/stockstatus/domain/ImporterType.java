@@ -20,14 +20,19 @@ public enum ImporterType {
     VANECK("VanEck Excel", "VanEck ETF holdings Excel format"),
 
     /**
+     * Amundi Excel format
+     */
+    AMUNDI("Amundi Excel", "Amundi ETF holdings Excel format"),
+
+    /**
      * iShares Web importer - fetches holdings from iShares website
      */
     ISHARES_WEB("iShares Web", "iShares ETF holdings from website"),
 
     /**
-     * Amundi Excel format
+     * XTrackers Web importer - fetches holdings from XTrackers (DWS) website
      */
-    AMUNDI("Amundi Excel", "Amundi ETF holdings Excel format");
+    XTRACKERS_WEB("XTrackers Web", "XTrackers ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -50,6 +55,14 @@ public enum ImporterType {
      * @return true if this is a web importer
      */
     public boolean isWebImporter() {
+        return this == ISHARES_WEB || this == XTRACKERS_WEB;
+    }
+
+    /**
+     * Check if this web importer requires a webDataId parameter
+     * @return true if this web importer needs webDataId
+     */
+    public boolean requiresWebDataId() {
         return this == ISHARES_WEB;
     }
 }

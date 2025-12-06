@@ -22,6 +22,7 @@ public class ImporterFactory {
     private final VanEckExcelImporter vanEckExcelImporter;
     private final AmundiExcelImporter amundiExcelImporter;
     private final ISharesWebImporter iSharesWebImporter;
+    private final XTrackersWebImporter xTrackersWebImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -101,10 +102,10 @@ public class ImporterFactory {
     public WebImporter getWebImporter(ImporterType importerType) {
         log.debug("Getting web importer for type: {}", importerType);
 
-        if (importerType == ImporterType.ISHARES_WEB) {
-            return iSharesWebImporter;
-        }
-
-        throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
+        return switch (importerType) {
+            case ISHARES_WEB -> iSharesWebImporter;
+            case XTRACKERS_WEB -> xTrackersWebImporter;
+            default -> throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
+        };
     }
 }
