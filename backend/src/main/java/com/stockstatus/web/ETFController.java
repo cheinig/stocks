@@ -46,6 +46,7 @@ public class ETFController {
             .importerType(request.getImporterType())
             .webUrl(request.getWebUrl())
             .webDataId(request.getWebDataId())
+            .tickerSymbol(request.getTickerSymbol())
             .build();
 
         ETF createdETF = etfService.createETF(etf);
@@ -101,6 +102,7 @@ public class ETFController {
             .importerType(request.getImporterType())
             .webUrl(request.getWebUrl())
             .webDataId(request.getWebDataId())
+            .tickerSymbol(request.getTickerSymbol())
             .build();
 
         ETF updatedETF = etfService.updateETF(id, etf);

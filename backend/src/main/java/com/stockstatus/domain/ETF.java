@@ -55,6 +55,10 @@ public class ETF {
     @Column(name = "web_data_id", length = 100)
     private String webDataId;
 
+    @Size(max = 50, message = "Ticker Symbol must not exceed 50 characters")
+    @Column(name = "ticker_symbol", length = 50)
+    private String tickerSymbol;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -11,7 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
 import { ETFRequest, ImporterType } from '../../../models/etf.model';
-import { isWebImporter, requiresWebDataId } from '../../../models/enums';
+import { isWebImporter, requiresWebDataId, requiresTickerSymbol } from '../../../models/enums';
 import { isinValidator } from '../../../shared/validators/isin.validator';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
@@ -110,6 +110,17 @@ import { IconComponent } from '../../../shared/components/icon.component';
                     </mat-form-field>
                   }
                 }
+
+                @if (showTickerSymbolField()) {
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Ticker Symbol</mat-label>
+                    <input matInput formControlName="tickerSymbol" placeholder="z.B. TDIV, ESPO">
+                    @if (etfForm.get('tickerSymbol')?.hasError('required') && etfForm.get('tickerSymbol')?.touched) {
+                      <mat-error>Ticker Symbol ist erforderlich für VanEck Web-Importer</mat-error>
+                    }
+                    <mat-hint>VanEck Ticker Symbol (wird zur URL-Bildung verwendet)</mat-hint>
+                  </mat-form-field>
+                }
               </div>
 
               <div class="form-actions">
@@ -203,11 +214,13 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.VANECK, label: 'VanEck Excel' },
     { value: ImporterType.AMUNDI, label: 'Amundi Excel' },
     { value: ImporterType.ISHARES_WEB, label: 'iShares Web' },
-    { value: ImporterType.XTRACKERS_WEB, label: 'XTrackers Web' }
+    { value: ImporterType.XTRACKERS_WEB, label: 'XTrackers Web' },
+    { value: ImporterType.VANECK_WEB, label: 'VanEck Web' }
   ];
 
   showWebUrlField = signal(false);
   showWebDataIdField = signal(false);
+  showTickerSymbolField = signal(false);
 
   constructor() {
     this.etfForm = this.fb.group({
@@ -215,7 +228,8 @@ export class EtfFormComponent implements OnInit {
       isin: ['', [Validators.required, isinValidator()]],
       importerType: ['', Validators.required],
       webUrl: [''],
-      webDataId: ['']
+      webDataId: [''],
+      tickerSymbol: ['']
     });
   }
 
@@ -227,18 +241,24 @@ export class EtfFormComponent implements OnInit {
       this.loadEtf();
     }
 
-    // Listen to importerType changes to show/hide webUrl and webDataId fields
+    // Listen to importerType changes to show/hide webUrl, webDataId and tickerSymbol fields
     this.etfForm.get('importerType')?.valueChanges.subscribe(importerType => {
       const isWeb = importerType && isWebImporter(importerType);
       const needsDataId = importerType && requiresWebDataId(importerType);
+      const needsTickerSymbol = importerType && requiresTickerSymbol(importerType);
 
-      this.showWebUrlField.set(isWeb);
+      // VanEck Web needs tickerSymbol but not webUrl
+      const needsWebUrl = isWeb && !needsTickerSymbol;
+
+      this.showWebUrlField.set(needsWebUrl);
       this.showWebDataIdField.set(needsDataId);
+      this.showTickerSymbolField.set(needsTickerSymbol);
 
       const webUrlControl = this.etfForm.get('webUrl');
       const webDataIdControl = this.etfForm.get('webDataId');
+      const tickerSymbolControl = this.etfForm.get('tickerSymbol');
 
-      if (isWeb) {
+      if (needsWebUrl) {
         webUrlControl?.setValidators([Validators.required]);
       } else {
         webUrlControl?.clearValidators();
@@ -252,8 +272,16 @@ export class EtfFormComponent implements OnInit {
         webDataIdControl?.setValue('');
       }
 
+      if (needsTickerSymbol) {
+        tickerSymbolControl?.setValidators([Validators.required]);
+      } else {
+        tickerSymbolControl?.clearValidators();
+        tickerSymbolControl?.setValue('');
+      }
+
       webUrlControl?.updateValueAndValidity();
       webDataIdControl?.updateValueAndValidity();
+      tickerSymbolControl?.updateValueAndValidity();
     });
   }
 
@@ -269,20 +297,25 @@ export class EtfFormComponent implements OnInit {
             isin: etf.isin,
             importerType: etf.importerType,
             webUrl: etf.webUrl || '',
-            webDataId: etf.webDataId || ''
+            webDataId: etf.webDataId || '',
+            tickerSymbol: etf.tickerSymbol || ''
           });
-          // Trigger visibility check and validation for webUrl and webDataId fields
+          // Trigger visibility check and validation for webUrl, webDataId and tickerSymbol fields
           if (etf.importerType) {
             const isWeb = isWebImporter(etf.importerType);
             const needsDataId = requiresWebDataId(etf.importerType);
+            const needsTickerSymbol = requiresTickerSymbol(etf.importerType);
+            const needsWebUrl = isWeb && !needsTickerSymbol;
 
-            this.showWebUrlField.set(isWeb);
+            this.showWebUrlField.set(needsWebUrl);
             this.showWebDataIdField.set(needsDataId);
+            this.showTickerSymbolField.set(needsTickerSymbol);
 
             const webUrlControl = this.etfForm.get('webUrl');
             const webDataIdControl = this.etfForm.get('webDataId');
+            const tickerSymbolControl = this.etfForm.get('tickerSymbol');
 
-            if (isWeb) {
+            if (needsWebUrl) {
               webUrlControl?.setValidators([Validators.required]);
             }
 
@@ -290,8 +323,13 @@ export class EtfFormComponent implements OnInit {
               webDataIdControl?.setValidators([Validators.required]);
             }
 
+            if (needsTickerSymbol) {
+              tickerSymbolControl?.setValidators([Validators.required]);
+            }
+
             webUrlControl?.updateValueAndValidity();
             webDataIdControl?.updateValueAndValidity();
+            tickerSymbolControl?.updateValueAndValidity();
           }
         }
       },

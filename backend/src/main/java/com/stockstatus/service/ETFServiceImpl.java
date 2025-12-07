@@ -235,8 +235,17 @@ public class ETFServiceImpl implements ETFService {
             );
         }
 
-        // Verify webUrl is configured
-        if (etf.getWebUrl() == null || etf.getWebUrl().isEmpty()) {
+        // Verify tickerSymbol is configured (only for importers that require it)
+        if (etf.getImporterType().requiresTickerSymbol() &&
+            (etf.getTickerSymbol() == null || etf.getTickerSymbol().isEmpty())) {
+            throw new IllegalArgumentException(
+                "ETF with ID " + etfId + " does not have a ticker symbol configured"
+            );
+        }
+
+        // Verify webUrl is configured (only for importers that require it)
+        if (!etf.getImporterType().requiresTickerSymbol() &&
+            (etf.getWebUrl() == null || etf.getWebUrl().isEmpty())) {
             throw new IllegalArgumentException(
                 "ETF with ID " + etfId + " does not have a web URL configured"
             );
@@ -254,16 +263,22 @@ public class ETFServiceImpl implements ETFService {
         com.stockstatus.service.importer.WebImporter webImporter = importerFactory.getWebImporter(etf.getImporterType());
 
         // Fetch and parse holdings from web
-        log.debug("Fetching holdings from URL: {} with dataId: {}", etf.getWebUrl(), etf.getWebDataId());
-
         List<AllocationEntry> allocationEntries;
 
-        // Cast to ISharesWebImporter to use the overloaded method
+        // Handle different web importer types
         if (webImporter instanceof com.stockstatus.service.importer.ISharesWebImporter) {
+            // iShares Web requires webUrl and webDataId
+            log.debug("Fetching holdings from URL: {} with dataId: {}", etf.getWebUrl(), etf.getWebDataId());
             com.stockstatus.service.importer.ISharesWebImporter iSharesImporter =
                 (com.stockstatus.service.importer.ISharesWebImporter) webImporter;
             allocationEntries = iSharesImporter.fetchAndParse(etf.getWebUrl(), etf.getWebDataId());
+        } else if (webImporter instanceof com.stockstatus.service.importer.VanEckWebImporter) {
+            // VanEck Web requires only ticker symbol
+            log.debug("Fetching holdings for ticker symbol: {}", etf.getTickerSymbol());
+            allocationEntries = webImporter.fetchAndParse(etf.getTickerSymbol());
         } else {
+            // XTrackers Web and others require only webUrl
+            log.debug("Fetching holdings from URL: {}", etf.getWebUrl());
             allocationEntries = webImporter.fetchAndParse(etf.getWebUrl());
         }
 

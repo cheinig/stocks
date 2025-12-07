@@ -24,6 +24,7 @@ public class ETFResponseDTO {
     private ImporterType importerType;
     private String webUrl;
     private String webDataId;
+    private String tickerSymbol;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -38,6 +39,7 @@ public class ETFResponseDTO {
             .importerType(etf.getImporterType())
             .webUrl(etf.getWebUrl())
             .webDataId(etf.getWebDataId())
+            .tickerSymbol(etf.getTickerSymbol())
             .createdAt(etf.getCreatedAt())
             .updatedAt(etf.getUpdatedAt())
             .build();
@@ -54,6 +56,7 @@ public class ETFResponseDTO {
             .importerType(this.importerType)
             .webUrl(this.webUrl)
             .webDataId(this.webDataId)
+            .tickerSymbol(this.tickerSymbol)
             .build();
     }
 }

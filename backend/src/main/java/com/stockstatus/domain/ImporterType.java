@@ -32,7 +32,12 @@ public enum ImporterType {
     /**
      * XTrackers Web importer - fetches holdings from XTrackers (DWS) website
      */
-    XTRACKERS_WEB("XTrackers Web", "XTrackers ETF holdings from website");
+    XTRACKERS_WEB("XTrackers Web", "XTrackers ETF holdings from website"),
+
+    /**
+     * VanEck Web importer - fetches holdings from VanEck website
+     */
+    VANECK_WEB("VanEck Web", "VanEck ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -55,7 +60,7 @@ public enum ImporterType {
      * @return true if this is a web importer
      */
     public boolean isWebImporter() {
-        return this == ISHARES_WEB || this == XTRACKERS_WEB;
+        return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB;
     }
 
     /**
@@ -64,5 +69,13 @@ public enum ImporterType {
      */
     public boolean requiresWebDataId() {
         return this == ISHARES_WEB;
+    }
+
+    /**
+     * Check if this web importer requires a ticker symbol parameter
+     * @return true if this web importer needs ticker symbol
+     */
+    public boolean requiresTickerSymbol() {
+        return this == VANECK_WEB;
     }
 }

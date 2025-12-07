@@ -23,6 +23,7 @@ public class ImporterFactory {
     private final AmundiExcelImporter amundiExcelImporter;
     private final ISharesWebImporter iSharesWebImporter;
     private final XTrackersWebImporter xTrackersWebImporter;
+    private final VanEckWebImporter vanEckWebImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -105,6 +106,7 @@ public class ImporterFactory {
         return switch (importerType) {
             case ISHARES_WEB -> iSharesWebImporter;
             case XTRACKERS_WEB -> xTrackersWebImporter;
+            case VANECK_WEB -> vanEckWebImporter;
             default -> throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
         };
     }
