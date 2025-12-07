@@ -23,8 +23,8 @@ export class SectorNamePipe implements PipeTransform {
 
   transform(sector: string | null | undefined): string {
     if (!sector) {
-      return '';
+      return 'Unbekannt';
     }
-    return this.sectorNames[sector] || sector;
+    return this.sectorNames[sector] || this.sectorNames['Unbekannt'];
   }
 }

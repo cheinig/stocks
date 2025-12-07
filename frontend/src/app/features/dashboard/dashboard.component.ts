@@ -698,7 +698,7 @@ export class DashboardComponent implements OnInit {
       'Utilities': '💡',
       'Unbekannt': '❓'
     };
-    return sectorIconMap[sector] || '📊';
+    return sectorIconMap[sector] || sectorIconMap['Unbekannt'];
   }
 
   getCountryFlag(countryCode: string): string {

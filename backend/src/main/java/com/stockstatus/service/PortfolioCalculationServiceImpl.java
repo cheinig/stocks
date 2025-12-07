@@ -9,6 +9,7 @@ import com.stockstatus.dto.AggregatedStockAllocation;
 import com.stockstatus.dto.CountryAllocation;
 import com.stockstatus.dto.PortfolioAnalysis;
 import com.stockstatus.dto.SectorAllocation;
+import com.stockstatus.util.SectorNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -219,7 +220,7 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
             .isin(accumulator.stock.getIsin())
             .name(accumulator.stock.getName())
             .country(accumulator.stock.getCountry())
-            .sector(accumulator.stock.getSector())
+            .sector(SectorNormalizer.normalize(accumulator.stock.getSector()))
             .totalPercentage(accumulator.getTotalPercentage().setScale(DISPLAY_SCALE, RoundingMode.HALF_UP))
             .directPercentage(accumulator.directPercentage.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP))
             .etfPercentage(accumulator.etfPercentage.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP))
@@ -262,7 +263,7 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
         Map<String, SectorAllocationAccumulator> sectorMap = new HashMap<>();
 
         for (AggregatedStockAllocation allocation : stockAllocations) {
-            String sector = allocation.getSector();
+            String sector = SectorNormalizer.normalize(allocation.getSector());
             SectorAllocationAccumulator accumulator = sectorMap.computeIfAbsent(
                 sector,
                 s -> new SectorAllocationAccumulator(s)

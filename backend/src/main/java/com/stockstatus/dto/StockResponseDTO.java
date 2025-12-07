@@ -1,6 +1,7 @@
 package com.stockstatus.dto;
 
 import com.stockstatus.domain.Stock;
+import com.stockstatus.util.SectorNormalizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +36,7 @@ public class StockResponseDTO {
             .name(stock.getName())
             .isin(stock.getIsin())
             .country(stock.getCountry())
-            .sector(stock.getSector())
+            .sector(SectorNormalizer.normalize(stock.getSector()))
             .hasLogo(stock.getLogo() != null && stock.getLogo().length > 0)
             .createdAt(stock.getCreatedAt())
             .updatedAt(stock.getUpdatedAt())
