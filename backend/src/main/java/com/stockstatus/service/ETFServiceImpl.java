@@ -78,6 +78,7 @@ public class ETFServiceImpl implements ETFService {
         existingETF.setImporterType(etf.getImporterType());
         existingETF.setWebUrl(etf.getWebUrl());
         existingETF.setWebDataId(etf.getWebDataId());
+        existingETF.setTickerSymbol(etf.getTickerSymbol());
 
         ETF updatedETF = etfRepository.save(existingETF);
         log.info("Updated ETF with ID: {}", updatedETF.getId());
