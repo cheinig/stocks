@@ -1,4 +1,6 @@
 export interface AggregatedStockAllocation {
+  stockId: number;
+  hasLogo: boolean;
   isin: string;
   name: string;
   country: string;

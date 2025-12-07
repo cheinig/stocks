@@ -18,6 +18,16 @@ import java.math.BigDecimal;
 public class AggregatedStockAllocation {
 
     /**
+     * The ID of the stock
+     */
+    private Long stockId;
+
+    /**
+     * Whether the stock has a logo
+     */
+    private boolean hasLogo;
+
+    /**
      * The ISIN of the stock
      */
     private String isin;

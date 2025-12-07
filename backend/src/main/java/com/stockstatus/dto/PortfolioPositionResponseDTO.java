@@ -26,6 +26,7 @@ public class PortfolioPositionResponseDTO {
     private BigDecimal quantity;
     private String assetName;
     private String assetIsin;
+    private boolean hasLogo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

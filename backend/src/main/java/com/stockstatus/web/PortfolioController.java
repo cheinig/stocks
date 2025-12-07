@@ -256,10 +256,12 @@ public class PortfolioController {
             Stock stock = stockService.findById(position.getAssetId());
             dto.setAssetName(stock.getName());
             dto.setAssetIsin(stock.getIsin());
+            dto.setHasLogo(stock.getLogo() != null && stock.getLogo().length > 0);
         } else if (position.getAssetType() == AssetType.ETF) {
             ETF etf = etfService.findById(position.getAssetId());
             dto.setAssetName(etf.getName());
             dto.setAssetIsin(etf.getIsin());
+            dto.setHasLogo(etf.getLogo() != null && etf.getLogo().length > 0);
         }
 
         return dto;

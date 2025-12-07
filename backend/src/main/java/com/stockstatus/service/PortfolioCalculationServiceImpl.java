@@ -214,6 +214,8 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
      */
     private AggregatedStockAllocation convertToDto(StockAllocationAccumulator accumulator) {
         return AggregatedStockAllocation.builder()
+            .stockId(accumulator.stock.getId())
+            .hasLogo(accumulator.stock.getLogo() != null && accumulator.stock.getLogo().length > 0)
             .isin(accumulator.stock.getIsin())
             .name(accumulator.stock.getName())
             .country(accumulator.stock.getCountry())

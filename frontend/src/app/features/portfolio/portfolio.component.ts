@@ -74,6 +74,15 @@ import { PositionFormComponent } from './position-form/position-form.component';
                     </td>
                   </ng-container>
 
+                  <ng-container matColumnDef="logo">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let position">
+                      @if (position.hasLogo) {
+                        <img [src]="getLogoUrl(position)" alt="Logo" class="asset-logo-small" />
+                      }
+                    </td>
+                  </ng-container>
+
                   <ng-container matColumnDef="assetName">
                     <th mat-header-cell *matHeaderCellDef>Name</th>
                     <td mat-cell *matCellDef="let position">{{ position.assetName || 'N/A' }}</td>
@@ -218,6 +227,18 @@ import { PositionFormComponent } from './position-form/position-form.component';
         width: 100%;
       }
     }
+
+    .asset-logo-small {
+      max-width: 24px;
+      max-height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    :host ::ng-deep .mat-mdc-table .mat-column-logo {
+      width: 32px;
+      padding-right: 4px !important;
+    }
   `]
 })
 export class PortfolioComponent implements OnInit {
@@ -228,7 +249,15 @@ export class PortfolioComponent implements OnInit {
   // Hardcoded portfolio ID as per backend setup
   private readonly PORTFOLIO_ID = 1;
 
-  displayedColumns = ['assetType', 'assetName', 'assetIsin', 'quantity', 'actions'];
+  displayedColumns = ['assetType', 'logo', 'assetName', 'assetIsin', 'quantity', 'actions'];
+
+  getLogoUrl(position: PortfolioPosition): string {
+    if (position.assetType === AssetType.STOCK) {
+      return `/api/stocks/${position.assetId}/logo`;
+    } else {
+      return `/api/etfs/${position.assetId}/logo`;
+    }
+  }
 
   ngOnInit(): void {
     this.loadPortfolio();

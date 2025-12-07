@@ -7,11 +7,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { from, of } from 'rxjs';
+import { catchError, mergeMap, toArray } from 'rxjs/operators';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
+import { EtfApiService } from '../../../core/services/etf-api.service';
 import { ETF } from '../../../models/etf.model';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
@@ -31,6 +35,7 @@ import { IconComponent } from '../../../shared/components/icon.component';
     MatFormFieldModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatTooltipModule,
     DataTableComponent,
     LoadingSpinnerComponent,
     ErrorMessageComponent
@@ -39,10 +44,18 @@ import { IconComponent } from '../../../shared/components/icon.component';
     <div class="etf-list-container">
       <div class="header">
         <h1>ETFs</h1>
-        <button mat-raised-button color="primary" (click)="createEtf()">
-          <mat-icon fontIcon="add"></mat-icon>
-          Neuer ETF
-        </button>
+        <div class="header-actions">
+          @if (hasEtfsWithoutLogo()) {
+            <button mat-raised-button color="primary" (click)="refreshAllLogos()" [disabled]="refreshingLogos()">
+              <mat-icon fontIcon="refresh" [class.spinning]="refreshingLogos()"></mat-icon>
+              Logos aktualisieren
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="createEtf()">
+            <mat-icon fontIcon="add"></mat-icon>
+            Neuer ETF
+          </button>
+        </div>
       </div>
 
       <div class="search-bar">
@@ -77,6 +90,15 @@ import { IconComponent } from '../../../shared/components/icon.component';
           (pageChange)="onPageChange($event)"
           (sortChange)="onSortChange($event)"
           (rowClick)="viewEtfDetails($event)">
+          <ng-template #cellTemplate let-row let-column="column">
+            @if (column === 'logo') {
+              @if (row.hasLogo) {
+                <img [src]="getLogoUrl(row.id)" alt="Logo" class="etf-logo-small" />
+              }
+            } @else {
+              {{ row[column] }}
+            }
+          </ng-template>
         </app-data-table>
       }
     </div>
@@ -97,6 +119,21 @@ import { IconComponent } from '../../../shared/components/icon.component';
       margin: 0;
       font-size: 2rem;
       font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
     }
 
     .search-bar {
@@ -123,6 +160,18 @@ import { IconComponent } from '../../../shared/components/icon.component';
         max-width: 100%;
       }
     }
+
+    .etf-logo-small {
+      max-width: 24px;
+      max-height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    :host ::ng-deep .mat-mdc-table .mat-column-logo {
+      width: 32px;
+      padding-right: 4px !important;
+    }
   `]
 })
 export class EtfListComponent implements OnInit {
@@ -130,14 +179,25 @@ export class EtfListComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   etfState = inject(EtfStateService);
+  private etfApi = inject(EtfApiService);
+
+  getLogoUrl(etfId: number): string {
+    return `/api/etfs/${etfId}/logo`;
+  }
 
   searchControl = new FormControl('');
   pageSize = signal(20);
   pageIndex = signal(0);
   sortField = signal<string>('name');
   sortDirection = signal<'asc' | 'desc'>('asc');
+  refreshingLogos = signal(false);
+
+  hasEtfsWithoutLogo(): boolean {
+    return this.etfState.etfs().some(etf => !etf.hasLogo);
+  }
 
   columns: TableColumn[] = [
+    { key: 'logo', label: '', sortable: false },
     { key: 'name', label: 'Name', sortable: true },
     { key: 'isin', label: 'ISIN', sortable: true },
     { key: 'importerType', label: 'Importer-Typ', sortable: true }
@@ -240,5 +300,38 @@ export class EtfListComponent implements OnInit {
     this.sortField.set(event.active);
     this.sortDirection.set(event.direction as 'asc' | 'desc');
     this.loadEtfs();
+  }
+
+  refreshAllLogos(): void {
+    const etfsWithoutLogo = this.etfState.etfs().filter(etf => !etf.hasLogo);
+
+    if (etfsWithoutLogo.length === 0) {
+      return;
+    }
+
+    this.refreshingLogos.set(true);
+
+    from(etfsWithoutLogo).pipe(
+      mergeMap(etf =>
+        this.etfApi.fetchLogoFromElbstream(etf.id).pipe(
+          catchError(error => {
+            console.error(`Failed to fetch logo for ETF ${etf.id}:`, error);
+            return of(null);
+          })
+        ),
+        10 // Maximum 10 concurrent requests
+      ),
+      toArray()
+    ).subscribe({
+      next: () => {
+        this.refreshingLogos.set(false);
+        this.loadEtfs();
+        this.snackBar.open(`${etfsWithoutLogo.length} Logo(s) wurden aktualisiert`, 'OK', { duration: 3000 });
+      },
+      error: () => {
+        this.refreshingLogos.set(false);
+        this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
+      }
+    });
   }
 }

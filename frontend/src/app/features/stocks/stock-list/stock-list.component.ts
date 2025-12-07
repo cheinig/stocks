@@ -82,7 +82,11 @@ import { IconComponent } from '../../../shared/components/icon.component';
           (sortChange)="onSortChange($event)"
           (rowClick)="viewStock($event)">
           <ng-template #cellTemplate let-row let-column="column">
-            @if (column === 'country') {
+            @if (column === 'logo') {
+              @if (row.hasLogo) {
+                <img [src]="getLogoUrl(row.id)" alt="Logo" class="stock-logo-small" />
+              }
+            } @else if (column === 'country') {
               {{ row.country | countryName }}
             } @else if (column === 'sector') {
               {{ row.sector | sectorName }}
@@ -136,6 +140,18 @@ import { IconComponent } from '../../../shared/components/icon.component';
         max-width: 100%;
       }
     }
+
+    .stock-logo-small {
+      max-width: 24px;
+      max-height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    :host ::ng-deep .mat-mdc-table .mat-column-logo {
+      width: 32px;
+      padding-right: 4px !important;
+    }
   `]
 })
 export class StockListComponent implements OnInit {
@@ -144,6 +160,10 @@ export class StockListComponent implements OnInit {
   private dialog = inject(MatDialog);
   stockState = inject(StockStateService);
 
+  getLogoUrl(stockId: number): string {
+    return `/api/stocks/${stockId}/logo`;
+  }
+
   searchControl = new FormControl('');
   pageSize = signal(20);
   pageIndex = signal(0);
@@ -151,6 +171,7 @@ export class StockListComponent implements OnInit {
   sortDirection = signal<'asc' | 'desc'>('asc');
 
   columns: TableColumn[] = [
+    { key: 'logo', label: '', sortable: false },
     { key: 'name', label: 'Name', sortable: true },
     { key: 'isin', label: 'ISIN', sortable: true },
     { key: 'country', label: 'Land', sortable: true },

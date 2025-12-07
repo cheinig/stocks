@@ -29,6 +29,7 @@ export interface PortfolioPosition {
   quantity: number;
   assetName?: string;
   assetIsin?: string;
+  hasLogo?: boolean;
 }
 
 export interface PortfolioPositionRequest {

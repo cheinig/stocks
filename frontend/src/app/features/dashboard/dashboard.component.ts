@@ -82,6 +82,15 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
                     <td mat-cell *matCellDef="let stock; let i = index">{{ i + 1 }}</td>
                   </ng-container>
 
+                  <ng-container matColumnDef="logo">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let stock">
+                      @if (stock.hasLogo) {
+                        <img [src]="getStockLogoUrl(stock.stockId)" alt="Logo" class="stock-logo-small" />
+                      }
+                    </td>
+                  </ng-container>
+
                   <ng-container matColumnDef="name">
                     <th mat-header-cell *matHeaderCellDef>Name</th>
                     <td mat-cell *matCellDef="let stock">{{ stock.name }}</td>
@@ -416,6 +425,18 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
         padding: 0.5rem;
       }
     }
+
+    .stock-logo-small {
+      max-width: 24px;
+      max-height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .stocks-table .mat-column-logo {
+      width: 32px;
+      padding-right: 4px !important;
+    }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -430,7 +451,11 @@ export class DashboardComponent implements OnInit {
   sectorAllocations = signal<SectorAllocation[] | null>(null);
   sectorChartData = signal<ChartData<'bar'> | null>(null);
 
-  displayedColumns = ['rank', 'name', 'isin', 'country', 'sector', 'totalPercentage', 'directPercentage', 'etfPercentage', 'etfCount'];
+  displayedColumns = ['rank', 'logo', 'name', 'isin', 'country', 'sector', 'totalPercentage', 'directPercentage', 'etfPercentage', 'etfCount'];
+
+  getStockLogoUrl(stockId: number): string {
+    return `/api/stocks/${stockId}/logo`;
+  }
 
   pieChartType: ChartType = 'pie';
   pieChartOptions: ChartConfiguration['options'] = {
