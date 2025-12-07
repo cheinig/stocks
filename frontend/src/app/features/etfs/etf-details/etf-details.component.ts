@@ -4,7 +4,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { BaseChartDirective } from 'ng2-charts';
@@ -28,7 +27,6 @@ import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
     MatButtonModule,
     MatCardModule,
     MatSnackBarModule,
-    MatDialogModule,
     MatTableModule,
     MatIconModule,
     LoadingSpinnerComponent,
@@ -44,7 +42,6 @@ export class EtfDetailsComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
-  private dialog = inject(MatDialog);
   private etfApi = inject(EtfApiService);
   etfState = inject(EtfStateService);
 
@@ -54,6 +51,7 @@ export class EtfDetailsComponent implements OnInit {
   uploadSuccess = signal<string | null>(null);
   statistics = signal<ETFStatistics | null>(null);
   loadingStatistics = signal(false);
+  logoUrl = signal<string | null>(null);
 
   pieChartData = signal<ChartData<'pie'> | null>(null);
   sectorChartData = signal<ChartData<'bar'> | null>(null);
@@ -134,11 +132,29 @@ export class EtfDetailsComponent implements OnInit {
 
     this.etfState.loadEtfById(this.etfId).subscribe({
       next: () => {
+        const etf = this.etfState.currentEtf();
+        if (etf?.hasLogo) {
+          this.loadLogoFromBackend();
+        }
         this.loadAllocations();
         this.loadStatistics();
       },
       error: () => {
         this.snackBar.open('Fehler beim Laden des ETFs', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  loadLogoFromBackend(): void {
+    if (!this.etfId) return;
+
+    this.etfApi.getLogo(this.etfId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.logoUrl.set(url);
+      },
+      error: (err) => {
+        console.error('Error loading logo from backend:', err);
       }
     });
   }

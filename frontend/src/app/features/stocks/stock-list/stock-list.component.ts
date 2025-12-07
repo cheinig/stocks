@@ -79,7 +79,8 @@ import { IconComponent } from '../../../shared/components/icon.component';
           [pageSize]="pageSize()"
           [pageIndex]="pageIndex()"
           (pageChange)="onPageChange($event)"
-          (sortChange)="onSortChange($event)">
+          (sortChange)="onSortChange($event)"
+          (rowClick)="viewStock($event)">
           <ng-template #cellTemplate let-row let-column="column">
             @if (column === 'country') {
               {{ row.country | countryName }}
@@ -240,6 +241,10 @@ export class StockListComponent implements OnInit {
 
   createStock(): void {
     this.router.navigate(['/stocks/create']);
+  }
+
+  viewStock(stock: Stock): void {
+    this.router.navigate(['/stocks', stock.id]);
   }
 
   editStock(stock: Stock): void {

@@ -78,4 +78,18 @@ export class EtfApiService {
   getStatistics(etfId: number): Observable<ETFStatistics> {
     return this.http.get<ETFStatistics>(`${this.baseUrl}/${etfId}/statistics`);
   }
+
+  uploadLogo(id: number, file: Blob): Observable<void> {
+    const formData = new FormData();
+    formData.append('file', file, 'logo.png');
+    return this.http.post<void>(`${this.baseUrl}/${id}/logo`, formData);
+  }
+
+  getLogo(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/logo`, { responseType: 'blob' });
+  }
+
+  fetchLogoFromElbstream(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/logo/fetch`, {});
+  }
 }

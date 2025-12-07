@@ -59,6 +59,13 @@ public class ETF {
     @Column(name = "ticker_symbol", length = 50)
     private String tickerSymbol;
 
+    @Column(name = "logo", columnDefinition = "BYTEA")
+    private byte[] logo;
+
+    @Size(max = 50, message = "Logo content type must not exceed 50 characters")
+    @Column(name = "logo_content_type", length = 50)
+    private String logoContentType;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

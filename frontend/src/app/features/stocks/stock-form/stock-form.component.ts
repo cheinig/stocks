@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { StockStateService } from '../../../core/services/stock-state.service';
+import { StockApiService } from '../../../core/services/stock-api.service';
 import { StockRequest } from '../../../models/stock.model';
 import { isinValidator } from '../../../shared/validators/isin.validator';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
@@ -55,6 +56,23 @@ import { IconComponent } from '../../../shared/components/icon.component';
       } @else {
         <mat-card>
           <mat-card-content>
+            @if (isEditMode() && logoUrl()) {
+              <div class="logo-section">
+                <img [src]="logoUrl()!" alt="Stock Logo" class="stock-logo" />
+              </div>
+            }
+            @if (isEditMode()) {
+              <div class="logo-actions">
+                <button type="button" mat-stroked-button color="primary" (click)="updateLogo()" [disabled]="loadingLogo()">
+                  <mat-icon>refresh</mat-icon>
+                  @if (loadingLogo()) {
+                    Lädt Logo...
+                  } @else {
+                    Logo aktualisieren
+                  }
+                </button>
+              </div>
+            }
             <form [formGroup]="stockForm" (ngSubmit)="onSubmit()">
               <div class="form-grid">
                 <mat-form-field appearance="outline" class="full-width">
@@ -155,6 +173,24 @@ import { IconComponent } from '../../../shared/components/icon.component';
       padding: 1rem;
     }
 
+    .logo-section {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .stock-logo {
+      max-width: 200px;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    .logo-actions {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -199,10 +235,13 @@ export class StockFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
   stockState = inject(StockStateService);
+  private stockApi = inject(StockApiService);
 
   isEditMode = signal(false);
   saving = signal(false);
   stockId?: number;
+  logoUrl = signal<string | null>(null);
+  loadingLogo = signal(false);
 
   stockForm: FormGroup;
   countryFilter = signal('');
@@ -518,10 +557,52 @@ export class StockFormComponent implements OnInit {
             country: stock.country,
             sector: stock.sector
           });
+          if (stock.hasLogo) {
+            this.loadLogoFromBackend();
+          }
         }
       },
       error: () => {
         this.snackBar.open('Fehler beim Laden der Aktie', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  loadLogoFromBackend(): void {
+    if (!this.stockId) return;
+
+    this.stockApi.getLogo(this.stockId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.logoUrl.set(url);
+      },
+      error: (err) => {
+        console.error('Error loading logo from backend:', err);
+      }
+    });
+  }
+
+  updateLogo(): void {
+    const stock = this.stockState.currentStock();
+    if (!stock?.isin || !this.stockId) {
+      this.snackBar.open('Keine ISIN vorhanden', 'OK', { duration: 3000 });
+      return;
+    }
+
+    this.loadingLogo.set(true);
+
+    // Verwende den Backend-Endpunkt zum Laden des Logos von elbstream
+    this.stockApi.fetchLogoFromElbstream(this.stockId).subscribe({
+      next: () => {
+        // Lade das Logo vom Backend und zeige es an
+        this.loadLogoFromBackend();
+        this.loadingLogo.set(false);
+        this.snackBar.open('Logo erfolgreich aktualisiert und gespeichert', 'OK', { duration: 3000 });
+      },
+      error: (err) => {
+        this.loadingLogo.set(false);
+        console.error('Error fetching logo:', err);
+        this.snackBar.open('Logo konnte nicht geladen werden', 'OK', { duration: 3000 });
       }
     });
   }

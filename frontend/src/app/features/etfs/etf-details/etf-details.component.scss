@@ -45,6 +45,32 @@ mat-card {
   font-weight: 500;
 }
 
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.etf-logo-large {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+}
+
+.logo-actions {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .actions {
   display: flex;
   gap: 1rem;

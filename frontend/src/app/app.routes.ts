@@ -23,6 +23,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/stocks/stock-form/stock-form.component').then(m => m.StockFormComponent)
   },
   {
+    path: 'stocks/:id',
+    loadComponent: () => import('./features/stocks/stock-details/stock-details.component').then(m => m.StockDetailsComponent)
+  },
+  {
     path: 'etfs',
     loadComponent: () => import('./features/etfs/etf-list/etf-list.component').then(m => m.EtfListComponent)
   },

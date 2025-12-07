@@ -11,6 +11,7 @@ export interface ETF {
   webUrl?: string;
   webDataId?: string;
   tickerSymbol?: string;
+  hasLogo?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -32,6 +33,7 @@ export interface ETFResponse {
   webUrl?: string;
   webDataId?: string;
   tickerSymbol?: string;
+  hasLogo?: boolean;
   createdAt: string;
   updatedAt: string;
 }

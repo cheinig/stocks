@@ -1,0 +1,66 @@
+<div class="stock-details-container">
+  <div class="header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Aktien-Details</h1>
+  </div>
+
+  @if (stockState.isLoading()) {
+    <app-loading-spinner></app-loading-spinner>
+  } @else if (stockState.error()) {
+    <app-error-message
+      [title]="'Fehler beim Laden der Aktie'"
+      [message]="stockState.error() || ''"
+      [onRetry]="loadStock.bind(this)">
+    </app-error-message>
+  } @else if (stockState.currentStock()) {
+    <!-- Stock Info Card -->
+    <mat-card class="stock-info-card">
+      <mat-card-header>
+        <div class="header-content">
+          @if (logoUrl()) {
+            <img [src]="logoUrl()!" alt="Stock Logo" class="stock-logo-large" />
+          }
+          <div class="header-text">
+            <mat-card-title>{{ stockState.currentStock()?.name }}</mat-card-title>
+            <mat-card-subtitle>{{ stockState.currentStock()?.isin }}</mat-card-subtitle>
+          </div>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Land:</span>
+            <div class="value country-value">
+              <span class="country-flag">{{ getCountryFlag(stockState.currentStock()?.country || '') }}</span>
+              <span>{{ stockState.currentStock()?.country }}</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="label">Branche:</span>
+            <span class="value">{{ stockState.currentStock()?.sector | sectorName }}</span>
+          </div>
+          @if (stockState.currentStock()?.createdAt) {
+            <div class="info-item">
+              <span class="label">Erstellt am:</span>
+              <span class="value">{{ stockState.currentStock()?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+            </div>
+          }
+          @if (stockState.currentStock()?.updatedAt) {
+            <div class="info-item">
+              <span class="label">Aktualisiert am:</span>
+              <span class="value">{{ stockState.currentStock()?.updatedAt | date:'dd.MM.yyyy HH:mm' }}</span>
+            </div>
+          }
+        </div>
+        <div class="actions">
+          <button mat-button color="primary" (click)="editStock()">
+            <mat-icon>edit</mat-icon>
+            Bearbeiten
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

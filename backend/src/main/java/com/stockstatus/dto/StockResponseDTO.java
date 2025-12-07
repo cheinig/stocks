@@ -22,6 +22,7 @@ public class StockResponseDTO {
     private String isin;
     private String country;
     private String sector;
+    private boolean hasLogo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -35,6 +36,7 @@ public class StockResponseDTO {
             .isin(stock.getIsin())
             .country(stock.getCountry())
             .sector(stock.getSector())
+            .hasLogo(stock.getLogo() != null && stock.getLogo().length > 0)
             .createdAt(stock.getCreatedAt())
             .updatedAt(stock.getUpdatedAt())
             .build();

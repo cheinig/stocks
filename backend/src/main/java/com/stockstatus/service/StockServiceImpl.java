@@ -154,6 +154,19 @@ public class StockServiceImpl implements StockService {
         return stockRepository.countByCountry(country);
     }
 
+    @Override
+    public Stock updateLogo(Long id, byte[] logo, String contentType) {
+        log.debug("Updating logo for stock with ID: {}", id);
+
+        Stock existingStock = findById(id);
+        existingStock.setLogo(logo);
+        existingStock.setLogoContentType(contentType);
+
+        Stock updatedStock = stockRepository.save(existingStock);
+        log.info("Updated logo for stock with ID: {}, size: {} bytes", id, logo.length);
+        return updatedStock;
+    }
+
     /**
      * Validate ISIN format
      * @param isin the ISIN to validate

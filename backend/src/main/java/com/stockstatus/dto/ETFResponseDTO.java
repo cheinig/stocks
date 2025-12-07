@@ -25,6 +25,7 @@ public class ETFResponseDTO {
     private String webUrl;
     private String webDataId;
     private String tickerSymbol;
+    private boolean hasLogo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -40,6 +41,7 @@ public class ETFResponseDTO {
             .webUrl(etf.getWebUrl())
             .webDataId(etf.getWebDataId())
             .tickerSymbol(etf.getTickerSymbol())
+            .hasLogo(etf.getLogo() != null && etf.getLogo().length > 0)
             .createdAt(etf.getCreatedAt())
             .updatedAt(etf.getUpdatedAt())
             .build();

@@ -53,6 +53,13 @@ public class Stock {
     @Column(name = "sector", length = 100)
     private String sector;
 
+    @Column(name = "logo", columnDefinition = "BYTEA")
+    private byte[] logo;
+
+    @Size(max = 50, message = "Logo content type must not exceed 50 characters")
+    @Column(name = "logo_content_type", length = 50)
+    private String logoContentType;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

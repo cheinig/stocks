@@ -121,4 +121,13 @@ public interface StockService {
      * @return number of stocks in that country
      */
     long countByCountry(String country);
+
+    /**
+     * Update logo for a stock
+     * @param id the ID of the stock
+     * @param logo the logo bytes
+     * @param contentType the content type of the logo
+     * @return the updated stock
+     */
+    Stock updateLogo(Long id, byte[] logo, String contentType);
 }

@@ -4,6 +4,7 @@ export interface Stock {
   isin: string;
   country: string;
   sector: string;
+  hasLogo?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,6 +22,7 @@ export interface StockResponse {
   isin: string;
   country: string;
   sector: string;
+  hasLogo?: boolean;
   createdAt: string;
   updatedAt: string;
 }

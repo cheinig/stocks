@@ -18,8 +18,15 @@
     <!-- ETF Info Card -->
     <mat-card class="etf-info-card">
       <mat-card-header>
-        <mat-card-title>{{ etfState.currentEtf()?.name }}</mat-card-title>
-        <mat-card-subtitle>{{ etfState.currentEtf()?.isin }}</mat-card-subtitle>
+        <div class="header-content">
+          @if (logoUrl()) {
+            <img [src]="logoUrl()!" alt="ETF Logo" class="etf-logo-large" />
+          }
+          <div class="header-text">
+            <mat-card-title>{{ etfState.currentEtf()?.name }}</mat-card-title>
+            <mat-card-subtitle>{{ etfState.currentEtf()?.isin }}</mat-card-subtitle>
+          </div>
+        </div>
       </mat-card-header>
       <mat-card-content>
         <div class="info-grid">

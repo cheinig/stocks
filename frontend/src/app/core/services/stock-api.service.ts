@@ -51,4 +51,18 @@ export class StockApiService {
     }
     return this.http.get<Page<Stock>>(`${this.baseUrl}/search`, { params });
   }
+
+  uploadLogo(id: number, file: Blob): Observable<void> {
+    const formData = new FormData();
+    formData.append('file', file, 'logo.png');
+    return this.http.post<void>(`${this.baseUrl}/${id}/logo`, formData);
+  }
+
+  getLogo(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/logo`, { responseType: 'blob' });
+  }
+
+  fetchLogoFromElbstream(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/logo/fetch`, {});
+  }
 }

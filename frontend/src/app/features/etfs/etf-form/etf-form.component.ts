@@ -10,6 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { EtfStateService } from '../../../core/services/etf-state.service';
+import { EtfApiService } from '../../../core/services/etf-api.service';
 import { ETFRequest, ImporterType } from '../../../models/etf.model';
 import { isWebImporter, requiresWebDataId, requiresTickerSymbol } from '../../../models/enums';
 import { isinValidator } from '../../../shared/validators/isin.validator';
@@ -53,6 +54,23 @@ import { IconComponent } from '../../../shared/components/icon.component';
       } @else {
         <mat-card>
           <mat-card-content>
+            @if (isEditMode() && logoUrl()) {
+              <div class="logo-section">
+                <img [src]="logoUrl()!" alt="ETF Logo" class="etf-logo" />
+              </div>
+            }
+            @if (isEditMode()) {
+              <div class="logo-actions">
+                <button type="button" mat-stroked-button color="primary" (click)="updateLogo()" [disabled]="loadingLogo()">
+                  <mat-icon>refresh</mat-icon>
+                  @if (loadingLogo()) {
+                    Lädt Logo...
+                  } @else {
+                    Logo aktualisieren
+                  }
+                </button>
+              </div>
+            }
             <form [formGroup]="etfForm" (ngSubmit)="onSubmit()">
               <div class="form-grid">
                 <mat-form-field appearance="outline" class="full-width">
@@ -165,6 +183,24 @@ import { IconComponent } from '../../../shared/components/icon.component';
       padding: 1rem;
     }
 
+    .logo-section {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .etf-logo {
+      max-width: 200px;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    .logo-actions {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
     .form-grid {
       display: flex;
       flex-direction: column;
@@ -201,10 +237,13 @@ export class EtfFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
   etfState = inject(EtfStateService);
+  private etfApi = inject(EtfApiService);
 
   isEditMode = signal(false);
   saving = signal(false);
   etfId?: number;
+  logoUrl = signal<string | null>(null);
+  loadingLogo = signal(false);
 
   etfForm: FormGroup;
 
@@ -331,10 +370,52 @@ export class EtfFormComponent implements OnInit {
             webDataIdControl?.updateValueAndValidity();
             tickerSymbolControl?.updateValueAndValidity();
           }
+          if (etf.hasLogo) {
+            this.loadLogoFromBackend();
+          }
         }
       },
       error: () => {
         this.snackBar.open('Fehler beim Laden des ETFs', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  loadLogoFromBackend(): void {
+    if (!this.etfId) return;
+
+    this.etfApi.getLogo(this.etfId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.logoUrl.set(url);
+      },
+      error: (err) => {
+        console.error('Error loading logo from backend:', err);
+      }
+    });
+  }
+
+  updateLogo(): void {
+    const etf = this.etfState.currentEtf();
+    if (!etf?.isin || !this.etfId) {
+      this.snackBar.open('Keine ISIN vorhanden', 'OK', { duration: 3000 });
+      return;
+    }
+
+    this.loadingLogo.set(true);
+
+    // Verwende den Backend-Endpunkt zum Laden des Logos von elbstream
+    this.etfApi.fetchLogoFromElbstream(this.etfId).subscribe({
+      next: () => {
+        // Lade das Logo vom Backend und zeige es an
+        this.loadLogoFromBackend();
+        this.loadingLogo.set(false);
+        this.snackBar.open('Logo erfolgreich aktualisiert und gespeichert', 'OK', { duration: 3000 });
+      },
+      error: (err) => {
+        this.loadingLogo.set(false);
+        console.error('Error fetching logo:', err);
+        this.snackBar.open('Logo konnte nicht geladen werden', 'OK', { duration: 3000 });
       }
     });
   }

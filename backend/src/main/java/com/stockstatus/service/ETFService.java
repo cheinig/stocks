@@ -154,4 +154,13 @@ public interface ETFService {
      * @throws IllegalArgumentException if the ETF is not using a web importer
      */
     List<String> refreshWebHoldings(Long etfId);
+
+    /**
+     * Update logo for an ETF
+     * @param id the ID of the ETF
+     * @param logo the logo bytes
+     * @param contentType the content type of the logo
+     * @return the updated ETF
+     */
+    ETF updateLogo(Long id, byte[] logo, String contentType);
 }

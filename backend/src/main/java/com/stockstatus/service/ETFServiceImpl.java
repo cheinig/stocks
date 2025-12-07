@@ -416,6 +416,19 @@ public class ETFServiceImpl implements ETFService {
         return String.format("SONSTIGE%05d", randomNumber);
     }
 
+    @Override
+    public ETF updateLogo(Long id, byte[] logo, String contentType) {
+        log.debug("Updating logo for ETF with ID: {}", id);
+
+        ETF existingEtf = findById(id);
+        existingEtf.setLogo(logo);
+        existingEtf.setLogoContentType(contentType);
+
+        ETF updatedEtf = etfRepository.save(existingEtf);
+        log.info("Updated logo for ETF with ID: {}, size: {} bytes", id, logo.length);
+        return updatedEtf;
+    }
+
     /**
      * Validate ISIN format
      * @param isin the ISIN to validate

@@ -14,8 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * REST Controller for Stock operations
@@ -150,5 +152,90 @@ public class StockController {
         Page<StockResponseDTO> response = stocks.map(StockResponseDTO::fromEntity);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Upload logo for a stock
+     * POST /api/stocks/{id}/logo
+     */
+    @PostMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload logo for a stock")
+    public ResponseEntity<Void> uploadLogo(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file
+    ) {
+        log.info("REST request to upload logo for Stock ID: {}", id);
+
+        try {
+            Stock stock = stockService.findById(id);
+            stock.setLogo(file.getBytes());
+            stock.setLogoContentType(file.getContentType());
+            stockService.updateStock(id, stock);
+
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error uploading logo for stock {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get logo for a stock
+     * GET /api/stocks/{id}/logo
+     */
+    @GetMapping("/{id}/logo")
+    @Operation(summary = "Get logo for a stock")
+    public ResponseEntity<byte[]> getLogo(@PathVariable Long id) {
+        log.debug("REST request to get logo for Stock ID: {}", id);
+
+        Stock stock = stockService.findById(id);
+
+        if (stock.getLogo() == null || stock.getLogo().length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(stock.getLogoContentType() != null ? stock.getLogoContentType() : "image/png"))
+            .body(stock.getLogo());
+    }
+
+    /**
+     * Fetch and store logo from elbstream API
+     * POST /api/stocks/{id}/logo/fetch
+     */
+    @PostMapping("/{id}/logo/fetch")
+    @Operation(summary = "Fetch logo from elbstream API and store it")
+    public ResponseEntity<Void> fetchAndStoreLogo(@PathVariable Long id) {
+        log.info("REST request to fetch and store logo for Stock ID: {}", id);
+
+        try {
+            Stock stock = stockService.findById(id);
+            String logoUrl = "https://api.elbstream.com/logos/isin/" + stock.getIsin();
+
+            // Fetch logo from elbstream API
+            java.net.URI uri = new java.net.URI(logoUrl);
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) uri.toURL().openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                byte[] logoBytes = connection.getInputStream().readAllBytes();
+                String contentType = connection.getContentType();
+
+                // Verwende die neue updateLogo-Methode
+                stockService.updateLogo(id, logoBytes, contentType != null ? contentType : "image/png");
+
+                log.info("Successfully fetched and stored logo for stock {}, size: {} bytes", id, logoBytes.length);
+                return ResponseEntity.ok().build();
+            } else {
+                log.warn("Failed to fetch logo for stock {}: HTTP {}", id, responseCode);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            log.error("Error fetching logo for stock {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

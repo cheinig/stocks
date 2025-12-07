@@ -13,8 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -320,6 +322,88 @@ public class ETFController {
         void addPercentage(BigDecimal percentage) {
             this.totalPercentage = this.totalPercentage.add(percentage);
             this.stockCount++;
+        }
+    }
+
+    /**
+     * Upload logo for an ETF
+     * POST /api/etfs/{id}/logo
+     */
+    @PostMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> uploadLogo(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file
+    ) {
+        log.info("REST request to upload logo for ETF ID: {}", id);
+
+        try {
+            ETF etf = etfService.findById(id);
+            etf.setLogo(file.getBytes());
+            etf.setLogoContentType(file.getContentType());
+            etfService.updateETF(id, etf);
+
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error uploading logo for ETF {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get logo for an ETF
+     * GET /api/etfs/{id}/logo
+     */
+    @GetMapping("/{id}/logo")
+    public ResponseEntity<byte[]> getLogo(@PathVariable Long id) {
+        log.debug("REST request to get logo for ETF ID: {}", id);
+
+        ETF etf = etfService.findById(id);
+
+        if (etf.getLogo() == null || etf.getLogo().length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(etf.getLogoContentType() != null ? etf.getLogoContentType() : "image/png"))
+            .body(etf.getLogo());
+    }
+
+    /**
+     * Fetch and store logo from elbstream API
+     * POST /api/etfs/{id}/logo/fetch
+     */
+    @PostMapping("/{id}/logo/fetch")
+    public ResponseEntity<Void> fetchAndStoreLogo(@PathVariable Long id) {
+        log.info("REST request to fetch and store logo for ETF ID: {}", id);
+
+        try {
+            ETF etf = etfService.findById(id);
+            String logoUrl = "https://api.elbstream.com/logos/isin/" + etf.getIsin();
+
+            // Fetch logo from elbstream API
+            java.net.URI uri = new java.net.URI(logoUrl);
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) uri.toURL().openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                byte[] logoBytes = connection.getInputStream().readAllBytes();
+                String contentType = connection.getContentType();
+
+                // Verwende die neue updateLogo-Methode
+                etfService.updateLogo(id, logoBytes, contentType != null ? contentType : "image/png");
+
+                log.info("Successfully fetched and stored logo for ETF {}, size: {} bytes", id, logoBytes.length);
+                return ResponseEntity.ok().build();
+            } else {
+                log.warn("Failed to fetch logo for ETF {}: HTTP {}", id, responseCode);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            log.error("Error fetching logo for ETF {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
