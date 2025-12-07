@@ -204,6 +204,7 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
                 <div class="country-stats">
                   @for (sector of sectorAllocations() || []; track sector.sector) {
                     <div class="country-item">
+                      <span class="sector-icon">{{ getSectorIcon(sector.sector) }}</span>
                       <span class="country-code">{{ sector.sector | sectorName }}</span>
                       <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
                       <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
@@ -384,7 +385,7 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
       border-radius: 4px;
     }
 
-    .country-flag {
+    .country-flag, .sector-icon {
       font-size: 1.5rem;
       margin-right: 0.25rem;
     }
@@ -680,6 +681,24 @@ export class DashboardComponent implements OnInit {
       colors.push(baseColors[i % baseColors.length]);
     }
     return colors;
+  }
+
+  getSectorIcon(sector: string): string {
+    const sectorIconMap: { [key: string]: string } = {
+      'Information Technology': '💻',
+      'Health Care': '⚕️',
+      'Financials': '🏦',
+      'Consumer Discretionary': '🛒',
+      'Consumer Staples': '🥫',
+      'Industrials': '⚙️',
+      'Energy': '⚡',
+      'Materials': '🏭',
+      'Real Estate': '🏢',
+      'Communication Services': '📡',
+      'Utilities': '💡',
+      'Unbekannt': '❓'
+    };
+    return sectorIconMap[sector] || '📊';
   }
 
   getCountryFlag(countryCode: string): string {
