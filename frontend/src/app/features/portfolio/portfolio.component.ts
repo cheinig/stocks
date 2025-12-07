@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';;
@@ -78,7 +78,7 @@ import { PositionFormComponent } from './position-form/position-form.component';
             </mat-card-header>
             <mat-card-content>
               <div class="table-container">
-                <table mat-table [dataSource]="portfolioState.currentPortfolio()!.positions">
+                <table mat-table [dataSource]="sortedPositions()">
                   <ng-container matColumnDef="assetType">
                     <th mat-header-cell *matHeaderCellDef>Typ</th>
                     <td mat-cell *matCellDef="let position">
@@ -295,6 +295,22 @@ export class PortfolioComponent implements OnInit {
     const positions = this.portfolioState.currentPortfolio()?.positions || [];
     return positions.some(position => !position.hasLogo);
   }
+
+  sortedPositions = computed(() => {
+    const positions = this.portfolioState.currentPortfolio()?.positions || [];
+    return [...positions].sort((a, b) => {
+      // First sort by assetType (ETF before STOCK)
+      // ETF comes before STOCK alphabetically (E before S)
+      const typeComparison = a.assetType.localeCompare(b.assetType);
+      if (typeComparison !== 0) {
+        return typeComparison;
+      }
+      // Then sort by assetName (ascending)
+      const nameA = a.assetName || '';
+      const nameB = b.assetName || '';
+      return nameA.localeCompare(nameB);
+    });
+  });
 
   ngOnInit(): void {
     this.loadPortfolio();
