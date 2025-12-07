@@ -5,9 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { from, of } from 'rxjs';
+import { catchError, mergeMap, toArray } from 'rxjs/operators';
 import { DashboardApiService } from '../../core/services/dashboard-api.service';
+import { StockApiService } from '../../core/services/stock-api.service';
 import { PortfolioAnalysis, AggregatedStockAllocation, CountryAllocation, SectorAllocation } from '../../models/dashboard.model';
 import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
 
@@ -21,6 +26,8 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
     MatIconModule,
     MatTableModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatTooltipModule,
     BaseChartDirective,
     SectorNamePipe
   ],
@@ -28,10 +35,18 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
     <div class="dashboard-container">
       <div class="dashboard-header">
         <h1>Portfolio Dashboard</h1>
-        <button mat-raised-button color="primary" (click)="refresh()" [disabled]="loading()">
-          <mat-icon>refresh</mat-icon>
-          Aktualisieren
-        </button>
+        <div class="header-actions">
+          @if (hasStocksWithoutLogo()) {
+            <button mat-raised-button color="primary" (click)="refreshAllLogos()" [disabled]="refreshingLogos()">
+              <mat-icon fontIcon="refresh" [class.spinning]="refreshingLogos()"></mat-icon>
+              Logos aktualisieren
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="refresh()" [disabled]="loading()">
+            <mat-icon>refresh</mat-icon>
+            Aktualisieren
+          </button>
+        </div>
       </div>
 
       @if (loading()) {
@@ -226,6 +241,21 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
     }
 
     .dashboard-header h1 {
@@ -441,6 +471,8 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
 })
 export class DashboardComponent implements OnInit {
   private dashboardApi = inject(DashboardApiService);
+  private stockApi = inject(StockApiService);
+  private snackBar = inject(MatSnackBar);
 
   private readonly PORTFOLIO_ID = 1; // Hardcoded portfolio ID
 
@@ -450,11 +482,17 @@ export class DashboardComponent implements OnInit {
   pieChartData = signal<ChartData<'pie'> | null>(null);
   sectorAllocations = signal<SectorAllocation[] | null>(null);
   sectorChartData = signal<ChartData<'bar'> | null>(null);
+  refreshingLogos = signal(false);
 
   displayedColumns = ['rank', 'logo', 'name', 'isin', 'country', 'sector', 'totalPercentage', 'directPercentage', 'etfPercentage', 'etfCount'];
 
   getStockLogoUrl(stockId: number): string {
     return `/api/stocks/${stockId}/logo`;
+  }
+
+  hasStocksWithoutLogo(): boolean {
+    const top20 = this.analysis()?.top20Stocks || [];
+    return top20.some(stock => !stock.hasLogo);
   }
 
   pieChartType: ChartType = 'pie';
@@ -690,5 +728,39 @@ export class DashboardComponent implements OnInit {
 
   refresh(): void {
     this.loadDashboard();
+  }
+
+  refreshAllLogos(): void {
+    const top20 = this.analysis()?.top20Stocks || [];
+    const stocksWithoutLogo = top20.filter(stock => !stock.hasLogo);
+
+    if (stocksWithoutLogo.length === 0) {
+      return;
+    }
+
+    this.refreshingLogos.set(true);
+
+    from(stocksWithoutLogo).pipe(
+      mergeMap(stock =>
+        this.stockApi.fetchLogoFromElbstream(stock.stockId).pipe(
+          catchError(error => {
+            console.error(`Failed to fetch logo for stock ${stock.stockId}:`, error);
+            return of(null);
+          })
+        ),
+        10 // Maximum 10 concurrent requests
+      ),
+      toArray()
+    ).subscribe({
+      next: () => {
+        this.refreshingLogos.set(false);
+        this.loadDashboard();
+        this.snackBar.open(`${stocksWithoutLogo.length} Logo(s) wurden aktualisiert`, 'OK', { duration: 3000 });
+      },
+      error: () => {
+        this.refreshingLogos.set(false);
+        this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
+      }
+    });
   }
 }

@@ -5,8 +5,13 @@ import { MatCardModule } from '@angular/material/card';;
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { from, of } from 'rxjs';
+import { catchError, mergeMap, toArray } from 'rxjs/operators';
 
 import { PortfolioStateService } from '../../core/services/portfolio-state.service';
+import { StockApiService } from '../../core/services/stock-api.service';
+import { EtfApiService } from '../../core/services/etf-api.service';
 import { PortfolioPosition } from '../../models/portfolio.model';
 import { AssetType } from '../../models/enums';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner.component';
@@ -25,6 +30,7 @@ import { PositionFormComponent } from './position-form/position-form.component';
     MatSnackBarModule,
     MatDialogModule,
     MatTableModule,
+    MatTooltipModule,
     IconComponent,
     LoadingSpinnerComponent,
     ErrorMessageComponent
@@ -33,10 +39,18 @@ import { PositionFormComponent } from './position-form/position-form.component';
     <div class="portfolio-container">
       <div class="header">
         <h1>Mein Portfolio</h1>
-        <button mat-raised-button color="primary" (click)="addPosition()">
-          <mat-icon fontIcon="add"></mat-icon>
-          Position hinzufügen
-        </button>
+        <div class="header-actions">
+          @if (hasPositionsWithoutLogo()) {
+            <button mat-raised-button color="primary" (click)="refreshAllLogos()" [disabled]="refreshingLogos()">
+              <mat-icon fontIcon="refresh" [class.spinning]="refreshingLogos()"></mat-icon>
+              Logos aktualisieren
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="addPosition()">
+            <mat-icon fontIcon="add"></mat-icon>
+            Position hinzufügen
+          </button>
+        </div>
       </div>
 
       @if (portfolioState.isLoading()) {
@@ -154,6 +168,21 @@ import { PositionFormComponent } from './position-form/position-form.component';
       font-weight: 500;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+
     mat-card {
       margin-bottom: 2rem;
     }
@@ -245,9 +274,12 @@ export class PortfolioComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   portfolioState = inject(PortfolioStateService);
+  private stockApi = inject(StockApiService);
+  private etfApi = inject(EtfApiService);
 
   // Hardcoded portfolio ID as per backend setup
   private readonly PORTFOLIO_ID = 1;
+  refreshingLogos = signal(false);
 
   displayedColumns = ['assetType', 'logo', 'assetName', 'assetIsin', 'quantity', 'actions'];
 
@@ -257,6 +289,11 @@ export class PortfolioComponent implements OnInit {
     } else {
       return `/api/etfs/${position.assetId}/logo`;
     }
+  }
+
+  hasPositionsWithoutLogo(): boolean {
+    const positions = this.portfolioState.currentPortfolio()?.positions || [];
+    return positions.some(position => !position.hasLogo);
   }
 
   ngOnInit(): void {
@@ -342,6 +379,48 @@ export class PortfolioComponent implements OnInit {
             this.snackBar.open('Fehler beim Löschen der Position', 'OK', { duration: 3000 });
           }
         });
+      }
+    });
+  }
+
+  refreshAllLogos(): void {
+    const positions = this.portfolioState.currentPortfolio()?.positions || [];
+    const positionsWithoutLogo = positions.filter(position => !position.hasLogo);
+
+    if (positionsWithoutLogo.length === 0) {
+      return;
+    }
+
+    this.refreshingLogos.set(true);
+
+    from(positionsWithoutLogo).pipe(
+      mergeMap(position => {
+        if (position.assetType === AssetType.STOCK) {
+          return this.stockApi.fetchLogoFromElbstream(position.assetId).pipe(
+            catchError(error => {
+              console.error(`Failed to fetch logo for stock ${position.assetId}:`, error);
+              return of(null);
+            })
+          );
+        } else {
+          return this.etfApi.fetchLogoFromElbstream(position.assetId).pipe(
+            catchError(error => {
+              console.error(`Failed to fetch logo for ETF ${position.assetId}:`, error);
+              return of(null);
+            })
+          );
+        }
+      }, 10), // Maximum 10 concurrent requests
+      toArray()
+    ).subscribe({
+      next: () => {
+        this.refreshingLogos.set(false);
+        this.loadPortfolio();
+        this.snackBar.open(`${positionsWithoutLogo.length} Logo(s) wurden aktualisiert`, 'OK', { duration: 3000 });
+      },
+      error: () => {
+        this.refreshingLogos.set(false);
+        this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
       }
     });
   }

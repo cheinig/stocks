@@ -7,11 +7,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageEvent } from '@angular/material/paginator';
 import { Sort } from '@angular/material/sort';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { from, of } from 'rxjs';
+import { catchError, mergeMap, toArray } from 'rxjs/operators';
 
 import { StockStateService } from '../../../core/services/stock-state.service';
+import { StockApiService } from '../../../core/services/stock-api.service';
 import { Stock } from '../../../models/stock.model';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
@@ -33,6 +37,7 @@ import { IconComponent } from '../../../shared/components/icon.component';
     MatFormFieldModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatTooltipModule,
     DataTableComponent,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
@@ -43,10 +48,18 @@ import { IconComponent } from '../../../shared/components/icon.component';
     <div class="stock-list-container">
       <div class="header">
         <h1>Aktien</h1>
-        <button mat-raised-button color="primary" (click)="createStock()">
-          <mat-icon fontIcon="add"></mat-icon>
-          Neue Aktie
-        </button>
+        <div class="header-actions">
+          @if (hasStocksWithoutLogo()) {
+            <button mat-raised-button color="primary" (click)="refreshAllLogos()" [disabled]="refreshingLogos()">
+              <mat-icon fontIcon="refresh" [class.spinning]="refreshingLogos()"></mat-icon>
+              Logos aktualisieren
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="createStock()">
+            <mat-icon fontIcon="add"></mat-icon>
+            Neue Aktie
+          </button>
+        </div>
       </div>
 
       <div class="search-bar">
@@ -116,8 +129,19 @@ import { IconComponent } from '../../../shared/components/icon.component';
       font-weight: 500;
     }
 
-    .header button mat-icon {
-      margin-right: 0.5rem;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
     }
 
     .search-bar {
@@ -159,6 +183,7 @@ export class StockListComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   stockState = inject(StockStateService);
+  private stockApi = inject(StockApiService);
 
   getLogoUrl(stockId: number): string {
     return `/api/stocks/${stockId}/logo`;
@@ -169,6 +194,11 @@ export class StockListComponent implements OnInit {
   pageIndex = signal(0);
   sortField = signal<string>('name');
   sortDirection = signal<'asc' | 'desc'>('asc');
+  refreshingLogos = signal(false);
+
+  hasStocksWithoutLogo(): boolean {
+    return this.stockState.stocks().some(stock => !stock.hasLogo);
+  }
 
   columns: TableColumn[] = [
     { key: 'logo', label: '', sortable: false },
@@ -297,6 +327,44 @@ export class StockListComponent implements OnInit {
             this.snackBar.open('Fehler beim Löschen der Aktie', 'OK', { duration: 3000 });
           }
         });
+      }
+    });
+  }
+
+  refreshAllLogos(): void {
+    const stocksWithoutLogo = this.stockState.stocks().filter(stock => !stock.hasLogo);
+
+    if (stocksWithoutLogo.length === 0) {
+      return;
+    }
+
+    this.refreshingLogos.set(true);
+
+    from(stocksWithoutLogo).pipe(
+      mergeMap(stock =>
+        this.stockApi.fetchLogoFromElbstream(stock.id).pipe(
+          catchError(error => {
+            console.error(`Failed to fetch logo for stock ${stock.id}:`, error);
+            return of(null);
+          })
+        ),
+        10 // Maximum 10 concurrent requests
+      ),
+      toArray()
+    ).subscribe({
+      next: () => {
+        this.refreshingLogos.set(false);
+        const query = this.searchControl.value?.trim();
+        if (query) {
+          this.searchStocks(query);
+        } else {
+          this.loadStocks();
+        }
+        this.snackBar.open(`${stocksWithoutLogo.length} Logo(s) wurden aktualisiert`, 'OK', { duration: 3000 });
+      },
+      error: () => {
+        this.refreshingLogos.set(false);
+        this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
       }
     });
   }
