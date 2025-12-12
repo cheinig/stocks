@@ -47,7 +47,7 @@ export class StockDetailsComponent implements OnInit {
   etfAllocations = signal<ETFAllocation[]>([]);
   loadingAllocations = signal(false);
   displayedColumns = ['etfName', 'percentage'];
-  showOnlyPortfolioEtfs = signal(false);
+  showOnlyPortfolioEtfs = signal(true);
 
   filteredEtfAllocations = computed(() => {
     const allocations = this.etfAllocations();

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -73,8 +73,8 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
                   <div class="stat-label">Länder</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-value">{{ (analysis()?.top20Stocks?.length) || 0 }}</div>
-                  <div class="stat-label">Top Positionen</div>
+                  <div class="stat-value">{{ top10TotalPercentage() | number:'1.2-2' }}%</div>
+                  <div class="stat-label">Top 10 Allokation</div>
                 </div>
                 <div class="stat-item">
                   <div class="stat-value">{{ (analysis()?.allStocks?.length) || 0 }}</div>
@@ -496,6 +496,12 @@ export class DashboardComponent implements OnInit {
   refreshingLogos = signal(false);
 
   displayedColumns = ['rank', 'logo', 'name', 'isin', 'country', 'sector', 'totalPercentage', 'directPercentage', 'etfPercentage', 'etfCount'];
+
+  top10TotalPercentage = computed(() => {
+    const top20 = this.analysis()?.top20Stocks || [];
+    const top10 = top20.slice(0, 10);
+    return top10.reduce((sum, stock) => sum + stock.totalPercentage, 0);
+  });
 
   getStockLogoUrl(stockId: number): string {
     return `/api/stocks/${stockId}/logo`;
