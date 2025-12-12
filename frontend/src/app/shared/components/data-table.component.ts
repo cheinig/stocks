@@ -59,7 +59,7 @@ export interface TableAction<T> {
                   mat-icon-button
                   [color]="action.color || 'primary'"
                   [matTooltip]="action.tooltip"
-                  (click)="action.action(row)">
+                  (click)="onActionClick($event, action, row)">
                   <mat-icon [fontIcon]="action.icon"></mat-icon>
                 </button>
               }
@@ -148,5 +148,10 @@ export class DataTableComponent<T> {
 
   onRowClick(row: T): void {
     this.rowClick.emit(row);
+  }
+
+  onActionClick(event: Event, action: TableAction<T>, row: T): void {
+    event.stopPropagation(); // Prevent row click event from firing
+    action.action(row);
   }
 }

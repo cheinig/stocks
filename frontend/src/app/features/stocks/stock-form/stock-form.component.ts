@@ -17,7 +17,6 @@ import { StockRequest } from '../../../models/stock.model';
 import { isinValidator } from '../../../shared/validators/isin.validator';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
-import { IconComponent } from '../../../shared/components/icon.component';
 
 @Component({
   selector: 'app-stock-form',
@@ -26,7 +25,7 @@ import { IconComponent } from '../../../shared/components/icon.component';
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
-    IconComponent,
+    MatIconModule,
     MatInputModule,
     MatFormFieldModule,
     MatSelectModule,
