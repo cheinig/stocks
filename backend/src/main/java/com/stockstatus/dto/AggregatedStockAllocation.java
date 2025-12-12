@@ -67,4 +67,9 @@ public class AggregatedStockAllocation {
      * Number of ETFs that contain this stock
      */
     private Integer etfCount;
+
+    /**
+     * Number of ETFs in the portfolio that contain this stock
+     */
+    private Integer portfolioEtfCount;
 }

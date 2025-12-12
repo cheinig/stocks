@@ -9,6 +9,7 @@ export interface AggregatedStockAllocation {
   directPercentage: number;
   etfPercentage: number;
   etfCount: number;
+  portfolioEtfCount: number;
 }
 
 export interface CountryAllocation {

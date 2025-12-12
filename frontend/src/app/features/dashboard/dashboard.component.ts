@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -145,11 +146,11 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
 
                   <ng-container matColumnDef="etfCount">
                     <th mat-header-cell *matHeaderCellDef>ETF Anzahl</th>
-                    <td mat-cell *matCellDef="let stock">{{ stock.etfCount }}</td>
+                    <td mat-cell *matCellDef="let stock">{{ stock.portfolioEtfCount }}</td>
                   </ng-container>
 
                   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="viewStockDetails(row)" class="clickable-row"></tr>
                 </table>
               </div>
             </mat-card-content>
@@ -355,6 +356,14 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
       padding: 0.75rem 1rem;
     }
 
+    .stocks-table .clickable-row {
+      cursor: pointer;
+    }
+
+    .stocks-table tr.mat-mdc-row:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
     .percentage {
       font-weight: 600;
       color: #4caf50;
@@ -474,6 +483,7 @@ export class DashboardComponent implements OnInit {
   private dashboardApi = inject(DashboardApiService);
   private stockApi = inject(StockApiService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   private readonly PORTFOLIO_ID = 1; // Hardcoded portfolio ID
 
@@ -781,5 +791,11 @@ export class DashboardComponent implements OnInit {
         this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
       }
     });
+  }
+
+  viewStockDetails(stock: AggregatedStockAllocation): void {
+    if (stock.stockId) {
+      this.router.navigate(['/stocks', stock.stockId]);
+    }
   }
 }

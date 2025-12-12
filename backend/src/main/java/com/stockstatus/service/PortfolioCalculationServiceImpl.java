@@ -204,7 +204,7 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
                 isin -> new StockAllocationAccumulator(stock)
             );
 
-            accumulator.addEtfPercentage(effectivePercentage);
+            accumulator.addEtfPercentage(effectivePercentage, position.getAssetId());
             log.trace("Added ETF stock: {} ({}), effective percentage: {}%",
                      stock.getName(), stock.getIsin(), effectivePercentage);
         }
@@ -225,6 +225,7 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
             .directPercentage(accumulator.directPercentage.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP))
             .etfPercentage(accumulator.etfPercentage.setScale(DISPLAY_SCALE, RoundingMode.HALF_UP))
             .etfCount(accumulator.etfSources.size())
+            .portfolioEtfCount(accumulator.portfolioEtfSources.size())
             .build();
     }
 
@@ -236,6 +237,7 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
         private BigDecimal directPercentage = BigDecimal.ZERO;
         private BigDecimal etfPercentage = BigDecimal.ZERO;
         private final Set<Long> etfSources = new HashSet<>();
+        private final Set<Long> portfolioEtfSources = new HashSet<>();
 
         public StockAllocationAccumulator(Stock stock) {
             this.stock = stock;
@@ -245,8 +247,10 @@ public class PortfolioCalculationServiceImpl implements PortfolioCalculationServ
             this.directPercentage = this.directPercentage.add(percentage);
         }
 
-        public void addEtfPercentage(BigDecimal percentage) {
+        public void addEtfPercentage(BigDecimal percentage, Long etfId) {
             this.etfPercentage = this.etfPercentage.add(percentage);
+            this.etfSources.add(etfId);
+            this.portfolioEtfSources.add(etfId);
         }
 
         public BigDecimal getTotalPercentage() {
