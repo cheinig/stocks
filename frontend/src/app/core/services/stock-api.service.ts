@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Stock, StockRequest, StockResponse } from '../../models/stock.model';
 import { Page, PageRequest } from '../../models/page.model';
+import { ETFAllocation } from '../../models/allocation.model';
 
 @Injectable({
   providedIn: 'root'
@@ -64,5 +65,9 @@ export class StockApiService {
 
   fetchLogoFromElbstream(id: number): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/logo/fetch`, {});
+  }
+
+  getETFAllocations(id: number): Observable<ETFAllocation[]> {
+    return this.http.get<ETFAllocation[]>(`${this.baseUrl}/${id}/etf-allocations`);
   }
 }

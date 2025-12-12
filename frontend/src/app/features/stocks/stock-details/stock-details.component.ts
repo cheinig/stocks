@@ -5,9 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
 
 import { StockStateService } from '../../../core/services/stock-state.service';
 import { StockApiService } from '../../../core/services/stock-api.service';
+import { ETFAllocation } from '../../../models/allocation.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
 import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
@@ -21,6 +23,7 @@ import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
     MatCardModule,
     MatSnackBarModule,
     MatIconModule,
+    MatTableModule,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     SectorNamePipe
@@ -37,6 +40,9 @@ export class StockDetailsComponent implements OnInit {
 
   stockId?: number;
   logoUrl = signal<string | null>(null);
+  etfAllocations = signal<ETFAllocation[]>([]);
+  loadingAllocations = signal(false);
+  displayedColumns = ['etfName', 'percentage'];
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -55,9 +61,26 @@ export class StockDetailsComponent implements OnInit {
         if (stock?.hasLogo) {
           this.loadLogoFromBackend();
         }
+        this.loadETFAllocations();
       },
       error: () => {
         this.snackBar.open('Fehler beim Laden der Aktie', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  loadETFAllocations(): void {
+    if (!this.stockId) return;
+
+    this.loadingAllocations.set(true);
+    this.stockApi.getETFAllocations(this.stockId).subscribe({
+      next: (allocations) => {
+        this.etfAllocations.set(allocations);
+        this.loadingAllocations.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading ETF allocations:', err);
+        this.loadingAllocations.set(false);
       }
     });
   }
@@ -105,5 +128,11 @@ export class StockDetailsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/stocks']);
+  }
+
+  viewEtfDetails(allocation: ETFAllocation): void {
+    if (allocation.etfId) {
+      this.router.navigate(['/etfs', allocation.etfId]);
+    }
   }
 }

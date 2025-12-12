@@ -64,6 +64,17 @@ public interface ETFAllocationRepository extends JpaRepository<ETFAllocation, Lo
     List<ETFAllocation> findByStockId(Long stockId);
 
     /**
+     * Find all allocations that reference a specific stock by ID with ETF eagerly fetched
+     * Only returns the latest version of each ETF allocation
+     * @param stockId the stock ID to find allocations for
+     * @return List of allocations that include this stock with ETF details
+     */
+    @Query("SELECT a FROM ETFAllocation a JOIN FETCH a.etf JOIN FETCH a.stock " +
+           "WHERE a.stock.id = :stockId " +
+           "AND a.allocationVersion = (SELECT MAX(a2.allocationVersion) FROM ETFAllocation a2 WHERE a2.etf.id = a.etf.id)")
+    List<ETFAllocation> findByStockIdWithEtf(@Param("stockId") Long stockId);
+
+    /**
      * Get the maximum allocation version for a specific ETF
      * @param etfId the ETF ID
      * @return the maximum version number, or null if no allocations exist

@@ -1,8 +1,11 @@
 package com.stockstatus.web;
 
+import com.stockstatus.domain.ETFAllocation;
 import com.stockstatus.domain.Stock;
+import com.stockstatus.dto.ETFAllocationResponseDTO;
 import com.stockstatus.dto.StockRequestDTO;
 import com.stockstatus.dto.StockResponseDTO;
+import com.stockstatus.repository.ETFAllocationRepository;
 import com.stockstatus.service.StockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +22,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * REST Controller for Stock operations
  */
@@ -30,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class StockController {
 
     private final StockService stockService;
+    private final ETFAllocationRepository etfAllocationRepository;
 
     /**
      * Create a new stock
@@ -237,5 +244,28 @@ public class StockController {
             log.error("Error fetching logo for stock {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    /**
+     * Get all ETF allocations for a specific stock
+     * GET /api/stocks/{id}/etf-allocations
+     */
+    @GetMapping("/{id}/etf-allocations")
+    @Operation(summary = "Get all ETF allocations containing this stock")
+    public ResponseEntity<List<ETFAllocationResponseDTO>> getETFAllocationsForStock(@PathVariable Long id) {
+        log.debug("REST request to get ETF allocations for Stock ID: {}", id);
+
+        // Verify stock exists
+        stockService.findById(id);
+
+        // Find all allocations for this stock with ETF eagerly loaded
+        List<ETFAllocation> allocations = etfAllocationRepository.findByStockIdWithEtf(id);
+
+        // Convert to DTOs
+        List<ETFAllocationResponseDTO> response = allocations.stream()
+            .map(ETFAllocationResponseDTO::fromEntity)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
     }
 }
