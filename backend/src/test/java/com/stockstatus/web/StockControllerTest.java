@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockstatus.domain.Stock;
 import com.stockstatus.dto.StockRequestDTO;
 import com.stockstatus.dto.StockResponseDTO;
+import com.stockstatus.repository.ETFAllocationRepository;
+import com.stockstatus.repository.PortfolioPositionRepository;
 import com.stockstatus.service.StockService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,12 @@ class StockControllerTest {
 
     @MockBean
     private StockService stockService;
+
+    @MockBean
+    private ETFAllocationRepository etfAllocationRepository;
+
+    @MockBean
+    private PortfolioPositionRepository portfolioPositionRepository;
 
     @Test
     @DisplayName("POST /api/stocks - Create stock successfully")
