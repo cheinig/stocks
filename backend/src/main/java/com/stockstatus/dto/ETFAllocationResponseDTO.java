@@ -27,6 +27,7 @@ public class ETFAllocationResponseDTO {
     private BigDecimal percentage;
     private Integer allocationVersion;
     private LocalDateTime uploadDate;
+    private Boolean inPortfolio;
 
     /**
      * Convert ETFAllocation entity to DTO

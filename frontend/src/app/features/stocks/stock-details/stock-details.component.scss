@@ -89,6 +89,19 @@ mat-card {
 }
 
 .etf-allocations-card {
+  .header-with-filter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+  }
+
   .table-container {
     width: 100%;
     overflow-x: auto;
@@ -139,5 +152,17 @@ mat-card {
 
   .actions button {
     width: 100%;
+  }
+
+  .etf-allocations-card {
+    .header-with-filter {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .filter-toggle {
+      width: 100%;
+      justify-content: flex-start;
+    }
   }
 }

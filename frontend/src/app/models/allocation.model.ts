@@ -8,6 +8,7 @@ export interface ETFAllocation {
   percentage: number;
   allocationVersion: number;
   uploadDate: string;
+  inPortfolio?: boolean;
   // Legacy support
   stock?: {
     id: number;

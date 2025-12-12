@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,6 +6,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
 
 import { StockStateService } from '../../../core/services/stock-state.service';
 import { StockApiService } from '../../../core/services/stock-api.service';
@@ -24,6 +26,8 @@ import { SectorNamePipe } from '../../../shared/pipes/sector-name.pipe';
     MatSnackBarModule,
     MatIconModule,
     MatTableModule,
+    MatSlideToggleModule,
+    FormsModule,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     SectorNamePipe
@@ -43,6 +47,15 @@ export class StockDetailsComponent implements OnInit {
   etfAllocations = signal<ETFAllocation[]>([]);
   loadingAllocations = signal(false);
   displayedColumns = ['etfName', 'percentage'];
+  showOnlyPortfolioEtfs = signal(false);
+
+  filteredEtfAllocations = computed(() => {
+    const allocations = this.etfAllocations();
+    if (this.showOnlyPortfolioEtfs()) {
+      return allocations.filter(a => a.inPortfolio === true);
+    }
+    return allocations;
+  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -134,5 +147,9 @@ export class StockDetailsComponent implements OnInit {
     if (allocation.etfId) {
       this.router.navigate(['/etfs', allocation.etfId]);
     }
+  }
+
+  togglePortfolioFilter(): void {
+    this.showOnlyPortfolioEtfs.update(value => !value);
   }
 }

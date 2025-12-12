@@ -1,11 +1,13 @@
 package com.stockstatus.web;
 
+import com.stockstatus.domain.AssetType;
 import com.stockstatus.domain.ETFAllocation;
 import com.stockstatus.domain.Stock;
 import com.stockstatus.dto.ETFAllocationResponseDTO;
 import com.stockstatus.dto.StockRequestDTO;
 import com.stockstatus.dto.StockResponseDTO;
 import com.stockstatus.repository.ETFAllocationRepository;
+import com.stockstatus.repository.PortfolioPositionRepository;
 import com.stockstatus.service.StockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +39,10 @@ public class StockController {
 
     private final StockService stockService;
     private final ETFAllocationRepository etfAllocationRepository;
+    private final PortfolioPositionRepository portfolioPositionRepository;
+
+    // Hardcoded portfolio ID as per backend setup
+    private static final Long PORTFOLIO_ID = 1L;
 
     /**
      * Create a new stock
@@ -261,9 +267,20 @@ public class StockController {
         // Find all allocations for this stock with ETF eagerly loaded
         List<ETFAllocation> allocations = etfAllocationRepository.findByStockIdWithEtf(id);
 
-        // Convert to DTOs
+        // Get all ETF IDs that are in the portfolio
+        List<Long> etfIdsInPortfolio = portfolioPositionRepository
+            .findByPortfolioIdAndAssetType(PORTFOLIO_ID, AssetType.ETF)
+            .stream()
+            .map(position -> position.getAssetId())
+            .collect(Collectors.toList());
+
+        // Convert to DTOs and mark which ETFs are in the portfolio
         List<ETFAllocationResponseDTO> response = allocations.stream()
-            .map(ETFAllocationResponseDTO::fromEntity)
+            .map(allocation -> {
+                ETFAllocationResponseDTO dto = ETFAllocationResponseDTO.fromEntity(allocation);
+                dto.setInPortfolio(etfIdsInPortfolio.contains(allocation.getEtf().getId()));
+                return dto;
+            })
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
