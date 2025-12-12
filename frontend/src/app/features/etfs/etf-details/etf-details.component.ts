@@ -391,4 +391,10 @@ export class EtfDetailsComponent implements OnInit {
   goBack(): void {
     this.router.navigate(['/etfs']);
   }
+
+  viewStockDetails(allocation: any): void {
+    if (allocation.stockId) {
+      this.router.navigate(['/stocks', allocation.stockId]);
+    }
+  }
 }

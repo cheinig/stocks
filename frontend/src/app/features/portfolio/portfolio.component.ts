@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';;
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -115,17 +116,17 @@ import { PositionFormComponent } from './position-form/position-form.component';
                   <ng-container matColumnDef="actions">
                     <th mat-header-cell *matHeaderCellDef>Aktionen</th>
                     <td mat-cell *matCellDef="let position">
-                      <button mat-icon-button color="primary" (click)="editPosition(position)" matTooltip="Bearbeiten">
+                      <button mat-icon-button color="primary" (click)="editPosition($event, position)" matTooltip="Bearbeiten">
                         <mat-icon fontIcon="edit"></mat-icon>
                       </button>
-                      <button mat-icon-button color="warn" (click)="deletePosition(position)" matTooltip="Löschen">
+                      <button mat-icon-button color="warn" (click)="deletePosition($event, position)" matTooltip="Löschen">
                         <mat-icon fontIcon="delete"></mat-icon>
                       </button>
                     </td>
                   </ng-container>
 
                   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="viewAssetDetails(row)" class="clickable-row"></tr>
                 </table>
               </div>
             </mat-card-content>
@@ -268,9 +269,18 @@ import { PositionFormComponent } from './position-form/position-form.component';
       width: 32px;
       padding-right: 4px !important;
     }
+
+    .clickable-row {
+      cursor: pointer;
+    }
+
+    tr.mat-mdc-row:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
   `]
 })
 export class PortfolioComponent implements OnInit {
+  private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   portfolioState = inject(PortfolioStateService);
@@ -345,7 +355,9 @@ export class PortfolioComponent implements OnInit {
     });
   }
 
-  editPosition(position: PortfolioPosition): void {
+  editPosition(event: Event, position: PortfolioPosition): void {
+    event.stopPropagation(); // Prevent row click event from firing
+
     const dialogRef = this.dialog.open(PositionFormComponent, {
       width: '600px',
       data: {
@@ -369,7 +381,8 @@ export class PortfolioComponent implements OnInit {
     });
   }
 
-  deletePosition(position: PortfolioPosition): void {
+  deletePosition(event: Event, position: PortfolioPosition): void {
+    event.stopPropagation(); // Prevent row click event from firing
     const assetTypeLabel = position.assetType === AssetType.STOCK ? 'Aktie' : 'ETF';
     const dialogData: ConfirmDialogData = {
       title: 'Position löschen',
@@ -439,5 +452,13 @@ export class PortfolioComponent implements OnInit {
         this.snackBar.open('Fehler beim Aktualisieren der Logos', 'OK', { duration: 3000 });
       }
     });
+  }
+
+  viewAssetDetails(position: PortfolioPosition): void {
+    if (position.assetType === AssetType.STOCK) {
+      this.router.navigate(['/stocks', position.assetId]);
+    } else {
+      this.router.navigate(['/etfs', position.assetId]);
+    }
   }
 }

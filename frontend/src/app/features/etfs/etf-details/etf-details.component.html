@@ -233,7 +233,7 @@
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="allocationColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: allocationColumns;"></tr>
+              <tr mat-row *matRowDef="let row; columns: allocationColumns;" (click)="viewStockDetails(row)" class="clickable-row"></tr>
             </table>
           </div>
 
