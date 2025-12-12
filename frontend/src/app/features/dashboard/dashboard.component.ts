@@ -281,7 +281,7 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
 
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      grid-template-columns: 1fr;
       gap: 1.5rem;
     }
 
@@ -294,7 +294,6 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
     }
 
     .chart-card {
-      grid-column: 1 / -1;
       min-height: 600px;
     }
 
@@ -304,6 +303,18 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
     }
 
     @media (min-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .summary-card {
+        grid-column: 1 / -1;
+      }
+
+      .stocks-card {
+        grid-column: 1 / -1;
+      }
+
       .chart-card {
         grid-column: span 1;
       }
