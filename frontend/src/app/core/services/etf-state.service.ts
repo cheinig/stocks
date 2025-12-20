@@ -153,7 +153,7 @@ export class EtfStateService {
 
     return this.etfApi.uploadAllocation(etfId, file).pipe(
       tap({
-        next: (statistics) => {
+        next: () => {
           // Reload allocations after successful upload
           this.loadCurrentAllocation(etfId);
           this._isLoading.set(false);

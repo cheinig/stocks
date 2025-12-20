@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -147,10 +147,10 @@ import { KeycloakService } from '../services/keycloak.service';
   `]
 })
 export class MainLayoutComponent {
+  private keycloakService = inject(KeycloakService);
+
   sidenavOpened = signal(true);
   sidenavMode = signal<'side' | 'over'>('side');
-
-  constructor(private keycloakService: KeycloakService) {}
 
   toggleSidenav() {
     this.sidenavOpened.update(opened => !opened);
