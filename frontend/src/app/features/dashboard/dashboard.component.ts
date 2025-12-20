@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -711,7 +711,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getSectorIcon(sector: string): string {
-    const sectorIconMap: Record<string, string> = {
+    const sectorIconMap: { [key: string]: string } = {
       'Information Technology': '💻',
       'Health Care': '⚕️',
       'Financials': '🏦',
@@ -734,7 +734,7 @@ export class DashboardComponent implements OnInit {
       return '🌍';
     }
 
-    const flagMap: Record<string, string> = {
+    const flagMap: { [key: string]: string } = {
       // North America
       'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽',
 

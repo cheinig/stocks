@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-icon',
+  selector: 'mat-icon',
   standalone: true,
   imports: [CommonModule],
   template: `<i [class]="'bi bi-' + bootstrapIcon"></i>`,

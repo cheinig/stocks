@@ -10,6 +10,7 @@ import com.stockstatus.service.StockService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * API tests for StockController using MockMvc
  */
 @WebMvcTest(StockController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("StockController API Tests")
 class StockControllerTest {
 

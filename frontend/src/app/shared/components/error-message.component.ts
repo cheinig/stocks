@@ -60,7 +60,5 @@ export class ErrorMessageComponent {
   @Input() title = 'Fehler';
   @Input() message = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
   @Input() showRetry = true;
-  @Input() onRetry: () => void = () => {
-    // Default empty implementation
-  };
+  @Input() onRetry: () => void = () => {};
 }

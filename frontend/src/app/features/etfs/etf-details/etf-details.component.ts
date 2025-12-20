@@ -277,7 +277,7 @@ export class EtfDetailsComponent implements OnInit {
       return '🌍';
     }
 
-    const flagMap: Record<string, string> = {
+    const flagMap: { [key: string]: string } = {
       'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽',
       'DE': '🇩🇪', 'FR': '🇫🇷', 'GB': '🇬🇧', 'IT': '🇮🇹', 'ES': '🇪🇸',
       'NL': '🇳🇱', 'CH': '🇨🇭', 'BE': '🇧🇪', 'AT': '🇦🇹', 'SE': '🇸🇪',

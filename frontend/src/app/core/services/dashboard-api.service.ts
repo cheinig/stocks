@@ -32,7 +32,7 @@ export class DashboardApiService {
   /**
    * Get top N stocks for a portfolio
    */
-  getTopStocks(portfolioId: number, limit = 20): Observable<AggregatedStockAllocation[]> {
+  getTopStocks(portfolioId: number, limit: number = 20): Observable<AggregatedStockAllocation[]> {
     const params = new HttpParams().set('limit', limit.toString());
     return this.http.get<AggregatedStockAllocation[]>(
       `${this.baseUrl}/top-stocks/${portfolioId}`,

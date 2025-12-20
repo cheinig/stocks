@@ -1,13 +1,12 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { CommonModule } from '@angular/common';
-import { KeycloakService } from '../services/keycloak.service';
+import { IconComponent } from '../../shared/components/icon.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -20,9 +19,8 @@ import { KeycloakService } from '../services/keycloak.service';
     MatToolbarModule,
     MatSidenavModule,
     MatListModule,
-    MatButtonModule,
-    MatMenuModule,
-    MatIconModule
+    IconComponent,
+    MatButtonModule
   ],
   template: `
     <div class="layout-container">
@@ -32,20 +30,6 @@ import { KeycloakService } from '../services/keycloak.service';
         </button>
         <span class="title">Stock-Status</span>
         <span class="spacer"></span>
-
-        <div class="user-menu">
-          <span class="user-name">{{ getUserFirstName() }}</span>
-          <button mat-icon-button [matMenuTriggerFor]="userMenu">
-            <mat-icon fontIcon="account_circle"></mat-icon>
-          </button>
-        </div>
-
-        <mat-menu #userMenu="matMenu">
-          <button mat-menu-item (click)="logout()">
-            <mat-icon fontIcon="logout"></mat-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
       </mat-toolbar>
 
       <mat-sidenav-container class="sidenav-container">
@@ -103,17 +87,6 @@ import { KeycloakService } from '../services/keycloak.service';
       flex: 1 1 auto;
     }
 
-    .user-menu {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .user-name {
-      font-size: 1rem;
-      font-weight: 400;
-    }
-
     .sidenav-container {
       flex: 1;
       overflow: hidden;
@@ -147,20 +120,10 @@ import { KeycloakService } from '../services/keycloak.service';
   `]
 })
 export class MainLayoutComponent {
-  private keycloakService = inject(KeycloakService);
-
   sidenavOpened = signal(true);
   sidenavMode = signal<'side' | 'over'>('side');
 
   toggleSidenav() {
     this.sidenavOpened.update(opened => !opened);
-  }
-
-  getUserFirstName(): string {
-    return this.keycloakService.getFirstName() || 'User';
-  }
-
-  logout() {
-    this.keycloakService.logout();
   }
 }

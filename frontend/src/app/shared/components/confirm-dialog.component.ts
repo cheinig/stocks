@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { IconComponent } from './icon.component';
@@ -62,8 +62,10 @@ export interface ConfirmDialogData {
   `]
 })
 export class ConfirmDialogComponent {
-  public dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
-  public data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
+  constructor(
+    public dialogRef: MatDialogRef<ConfirmDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: ConfirmDialogData
+  ) {}
 
   getTitleIcon(): string {
     return this.data.confirmColor === 'warn' ? 'warning' : 'help_outline';
