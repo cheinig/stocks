@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'mat-icon',
   standalone: true,
   imports: [CommonModule],

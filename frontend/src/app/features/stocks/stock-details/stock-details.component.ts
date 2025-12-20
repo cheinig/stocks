@@ -119,7 +119,7 @@ export class StockDetailsComponent implements OnInit {
   }
 
   getCountryFlag(countryCode: string): string {
-    const flagMap: { [key: string]: string } = {
+    const flagMap: Record<string, string> = {
       'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽',
       'DE': '🇩🇪', 'FR': '🇫🇷', 'GB': '🇬🇧', 'IT': '🇮🇹', 'ES': '🇪🇸',
       'NL': '🇳🇱', 'CH': '🇨🇭', 'BE': '🇧🇪', 'AT': '🇦🇹', 'SE': '🇸🇪',

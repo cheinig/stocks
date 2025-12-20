@@ -1,21 +1,20 @@
-import { Directive, ElementRef, Input, OnInit, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, Renderer2, inject } from '@angular/core';
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'mat-icon',
   standalone: true
 })
 export class IconDirective implements OnInit {
+  private el = inject(ElementRef);
+  private renderer = inject(Renderer2);
+
   @Input() set matIcon(value: string) {
     this.icon = value;
     this.updateIcon();
   }
 
   private icon = '';
-
-  constructor(
-    private el: ElementRef,
-    private renderer: Renderer2
-  ) {}
 
   ngOnInit(): void {
     this.updateIcon();

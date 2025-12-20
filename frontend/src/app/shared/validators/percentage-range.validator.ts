@@ -1,6 +1,6 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-export function percentageRangeValidator(min: number = 0, max: number = 100): ValidatorFn {
+export function percentageRangeValidator(min = 0, max = 100): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
 
