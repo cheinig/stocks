@@ -50,6 +50,13 @@ spring:
     time-zone: UTC
     default-property-inclusion: non_null
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:https://auth.heinig.it/realms/heinis}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:https://auth.heinig.it/realms/heinis/protocol/openid-connect/certs}
+
 server:
   port: ${SERVER_PORT:8080}
   error:

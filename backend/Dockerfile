@@ -18,6 +18,17 @@ FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 
+# Copy custom certificate
+COPY heinig-cert.pem /tmp/heinig-cert.pem
+
+# Import certificate into Java truststore (as root)
+RUN keytool -import -alias heinig-root \
+    -keystore $JAVA_HOME/lib/security/cacerts \
+    -file /tmp/heinig-cert.pem \
+    -storepass changeit \
+    -noprompt && \
+    rm /tmp/heinig-cert.pem
+
 # Create non-root user
 RUN groupadd -r spring && useradd -r -g spring spring
 USER spring:spring

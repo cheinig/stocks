@@ -37,6 +37,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-dev123}
       SERVER_PORT: 8080
       ALLOWED_ORIGINS: http://localhost:4200,http://localhost
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI:-https://auth.heinig.it/realms/heinis}
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI:-https://auth.heinig.it/realms/heinis/protocol/openid-connect/certs}
     ports:
       - "8080:8080"
     networks:

@@ -43,6 +43,7 @@ desktop.ini
 .env.*.local
 *.key
 *.pem
+!backend/heinig-cert.pem
 credentials.json
 
 # Docker
