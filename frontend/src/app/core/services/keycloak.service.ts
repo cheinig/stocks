@@ -61,6 +61,19 @@ export class KeycloakService {
     return this.keycloak.tokenParsed?.['preferred_username'];
   }
 
+  getFirstName(): string | undefined {
+    return this.keycloak.tokenParsed?.['given_name'];
+  }
+
+  getFullName(): string | undefined {
+    const firstName = this.getFirstName();
+    const lastName = this.keycloak.tokenParsed?.['family_name'];
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    return firstName || lastName || this.getUsername();
+  }
+
   getUserRoles(): string[] {
     const realmAccess = this.keycloak.tokenParsed?.['realm_access'];
     return realmAccess?.['roles'] || [];

@@ -55,7 +55,9 @@ export class IconComponent {
       'help_outline': 'question-circle',
       'cloud_upload': 'cloud-upload',
       'insert_drive_file': 'file-earmark',
-      'error': 'x-circle'
+      'error': 'x-circle',
+      'account_circle': 'person-circle',
+      'logout': 'box-arrow-right'
     };
 
     // Check if it's already a Bootstrap icon

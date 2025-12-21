@@ -1,11 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/components/icon.component';
+import { KeycloakService } from '../services/keycloak.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -19,7 +22,9 @@ import { IconComponent } from '../../shared/components/icon.component';
     MatSidenavModule,
     MatListModule,
     IconComponent,
-    MatButtonModule
+    MatButtonModule,
+    MatMenuModule,
+    MatDividerModule
   ],
   template: `
     <div class="layout-container">
@@ -29,6 +34,19 @@ import { IconComponent } from '../../shared/components/icon.component';
         </button>
         <span class="title">Stock-Status</span>
         <span class="spacer"></span>
+
+        <div class="user-menu">
+          <span class="user-name-display">{{ getUserDisplayName() }}</span>
+          <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-button">
+            <mat-icon fontIcon="account_circle"></mat-icon>
+          </button>
+          <mat-menu #userMenu="matMenu">
+            <button mat-menu-item (click)="logout()">
+              <mat-icon fontIcon="logout"></mat-icon>
+              <span>Abmelden</span>
+            </button>
+          </mat-menu>
+        </div>
       </mat-toolbar>
 
       <mat-sidenav-container class="sidenav-container">
@@ -86,6 +104,28 @@ import { IconComponent } from '../../shared/components/icon.component';
       flex: 1 1 auto;
     }
 
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-name-display {
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .user-button {
+      font-size: 1.5rem;
+    }
+
+    .user-button mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+
     .sidenav-container {
       flex: 1;
       overflow: hidden;
@@ -119,10 +159,19 @@ import { IconComponent } from '../../shared/components/icon.component';
   `]
 })
 export class MainLayoutComponent {
+  keycloakService = inject(KeycloakService);
   sidenavOpened = signal(true);
   sidenavMode = signal<'side' | 'over'>('side');
 
   toggleSidenav() {
     this.sidenavOpened.update(opened => !opened);
+  }
+
+  getUserDisplayName(): string {
+    return this.keycloakService.getFirstName() || this.keycloakService.getUsername() || 'Benutzer';
+  }
+
+  logout(): void {
+    this.keycloakService.logout();
   }
 }

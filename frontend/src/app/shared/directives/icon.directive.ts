@@ -42,7 +42,9 @@ export class IconDirective implements OnInit {
       'help_outline': 'question-circle',
       'cloud_upload': 'cloud-upload',
       'insert_drive_file': 'file-earmark',
-      'error': 'x-circle'
+      'error': 'x-circle',
+      'account_circle': 'person-circle',
+      'logout': 'box-arrow-right'
     };
 
     const bootstrapIcon = iconMap[this.icon] || this.icon;
