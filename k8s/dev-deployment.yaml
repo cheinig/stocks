@@ -178,11 +178,24 @@ spec:
                   key: SPRING_JPA_HIBERNATE_DDL_AUTO
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: KEYCLOAK_ISSUER_URI
+              value: https://auth.heinig.it/realms/heinis
+            - name: KEYCLOAK_JWK_SET_URI
+              value: https://auth.heinig.it/realms/heinis/protocol/openid-connect/certs
+            - name: ALLOWED_ORIGINS
+              value: http://localhost:4200,https://etf.heinig.it
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
-            initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
@@ -190,7 +203,6 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
-            initialDelaySeconds: 30
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
