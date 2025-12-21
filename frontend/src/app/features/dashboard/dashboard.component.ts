@@ -177,8 +177,10 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
                     <div class="country-item">
                       <span class="country-flag">{{ getCountryFlag(country.countryCode) }}</span>
                       <span class="country-code">{{ country.countryCode }}</span>
-                      <span class="country-percentage">{{ country.percentage | number:'1.2-2' }}%</span>
-                      <span class="country-stocks">({{ country.stockCount }} Aktien)</span>
+                      <div class="country-percentage">
+                        <span>{{ country.percentage | number:'1.2-2' }}%</span>
+                        <span class="country-stocks">({{ country.stockCount }}&nbsp;Aktien)</span>
+                      </div>
                     </div>
                   }
                 </div>
@@ -207,8 +209,10 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
                     <div class="country-item">
                       <span class="sector-icon">{{ getSectorIcon(sector.sector) }}</span>
                       <span class="country-code">{{ sector.sector | sectorName }}</span>
-                      <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
-                      <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
+                      <div class="country-percentage">
+                        <span>{{ sector.percentage | number:'1.2-2' }}%</span>
+                        <span class="country-stocks">({{ sector.stockCount }}&nbsp;Aktien)</span>
+                      </div>
                     </div>
                   }
                 </div>
@@ -419,11 +423,17 @@ import { SectorNamePipe } from '../../shared/pipes/sector-name.pipe';
       font-weight: 500;
       color: #3f51b5;
       margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.125rem;
+      line-height: 1.2;
     }
 
     .country-stocks {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
     }
 
     .error-card {

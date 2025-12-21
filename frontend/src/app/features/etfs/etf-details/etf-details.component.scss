@@ -133,11 +133,17 @@ mat-card {
   font-weight: 500;
   color: #3f51b5;
   margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  line-height: 1.2;
 }
 
 .country-stocks {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
 }
 
 .upload-progress,

@@ -85,8 +85,10 @@
                     <div class="country-item">
                       <span class="country-flag">{{ getCountryFlag(country.countryCode) }}</span>
                       <span class="country-code">{{ country.countryCode }}</span>
-                      <span class="country-percentage">{{ country.percentage | number:'1.2-2' }}%</span>
-                      <span class="country-stocks">({{ country.stockCount }} Aktien)</span>
+                      <div class="country-percentage">
+                        <span>{{ country.percentage | number:'1.2-2' }}%</span>
+                        <span class="country-stocks">({{ country.stockCount }}&nbsp;Aktien)</span>
+                      </div>
                     </div>
                   }
                 </div>
@@ -114,8 +116,10 @@
                   @for (sector of statistics()?.sectorAllocations || []; track sector.sector) {
                     <div class="country-item">
                       <span class="country-code">{{ sector.sector | sectorName }}</span>
-                      <span class="country-percentage">{{ sector.percentage | number:'1.2-2' }}%</span>
-                      <span class="country-stocks">({{ sector.stockCount }} Aktien)</span>
+                      <div class="country-percentage">
+                        <span>{{ sector.percentage | number:'1.2-2' }}%</span>
+                        <span class="country-stocks">({{ sector.stockCount }}&nbsp;Aktien)</span>
+                      </div>
                     </div>
                   }
                 </div>
