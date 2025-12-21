@@ -117,13 +117,15 @@ import { KeycloakService } from '../services/keycloak.service';
     }
 
     .user-button {
-      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .user-button mat-icon {
-      font-size: 2rem;
-      width: 2rem;
-      height: 2rem;
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
     }
 
     .sidenav-container {
