@@ -255,7 +255,8 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.ISHARES_WEB, label: 'iShares Web' },
     { value: ImporterType.XTRACKERS_WEB, label: 'XTrackers Web' },
     { value: ImporterType.VANECK_WEB, label: 'VanEck Web' },
-    { value: ImporterType.AMUNDI_WEB, label: 'Amundi Web' }
+    { value: ImporterType.AMUNDI_WEB, label: 'Amundi Web' },
+    { value: ImporterType.FIDELITY_WEB, label: 'Fidelity Web' }
   ];
 
   showWebUrlField = signal(false);
@@ -288,8 +289,8 @@ export class EtfFormComponent implements OnInit {
       const needsTickerSymbol = importerType && requiresTickerSymbol(importerType);
 
       // VanEck Web needs tickerSymbol but not webUrl
-      // Amundi Web needs neither webUrl nor tickerSymbol (uses ISIN and fixed API endpoint)
-      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB;
+      // Amundi Web and Fidelity Web need neither webUrl nor tickerSymbol (use ISIN and fixed API endpoint)
+      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB;
 
       this.showWebUrlField.set(needsWebUrl);
       this.showWebDataIdField.set(needsDataId);
@@ -346,7 +347,7 @@ export class EtfFormComponent implements OnInit {
             const isWeb = isWebImporter(etf.importerType);
             const needsDataId = requiresWebDataId(etf.importerType);
             const needsTickerSymbol = requiresTickerSymbol(etf.importerType);
-            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB;
+            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB;
 
             this.showWebUrlField.set(needsWebUrl);
             this.showWebDataIdField.set(needsDataId);
