@@ -245,7 +245,9 @@ public class ETFServiceImpl implements ETFService {
         }
 
         // Verify webUrl is configured (only for importers that require it)
+        // Amundi Web does not require webUrl as it uses a fixed API endpoint
         if (!etf.getImporterType().requiresTickerSymbol() &&
+            etf.getImporterType() != ImporterType.AMUNDI_WEB &&
             (etf.getWebUrl() == null || etf.getWebUrl().isEmpty())) {
             throw new IllegalArgumentException(
                 "ETF with ID " + etfId + " does not have a web URL configured"
@@ -277,6 +279,10 @@ public class ETFServiceImpl implements ETFService {
             // VanEck Web requires only ticker symbol
             log.debug("Fetching holdings for ticker symbol: {}", etf.getTickerSymbol());
             allocationEntries = webImporter.fetchAndParse(etf.getTickerSymbol());
+        } else if (webImporter instanceof com.stockstatus.service.importer.AmundiWebImporter) {
+            // Amundi Web requires only ISIN (uses fixed API endpoint)
+            log.debug("Fetching holdings for ISIN: {}", etf.getIsin());
+            allocationEntries = webImporter.fetchAndParse(etf.getIsin());
         } else {
             // XTrackers Web and others require only webUrl
             log.debug("Fetching holdings from URL: {}", etf.getWebUrl());

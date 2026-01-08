@@ -10,11 +10,12 @@ export enum ImporterType {
   AMUNDI = 'AMUNDI',
   ISHARES_WEB = 'ISHARES_WEB',
   XTRACKERS_WEB = 'XTRACKERS_WEB',
-  VANECK_WEB = 'VANECK_WEB'
+  VANECK_WEB = 'VANECK_WEB',
+  AMUNDI_WEB = 'AMUNDI_WEB'
 }
 
 export function isWebImporter(importerType: ImporterType): boolean {
-  return importerType === ImporterType.ISHARES_WEB || importerType === ImporterType.XTRACKERS_WEB || importerType === ImporterType.VANECK_WEB;
+  return importerType === ImporterType.ISHARES_WEB || importerType === ImporterType.XTRACKERS_WEB || importerType === ImporterType.VANECK_WEB || importerType === ImporterType.AMUNDI_WEB;
 }
 
 export function requiresWebDataId(importerType: ImporterType): boolean {

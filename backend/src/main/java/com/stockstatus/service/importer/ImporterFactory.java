@@ -24,6 +24,7 @@ public class ImporterFactory {
     private final ISharesWebImporter iSharesWebImporter;
     private final XTrackersWebImporter xTrackersWebImporter;
     private final VanEckWebImporter vanEckWebImporter;
+    private final AmundiWebImporter amundiWebImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -107,6 +108,7 @@ public class ImporterFactory {
             case ISHARES_WEB -> iSharesWebImporter;
             case XTRACKERS_WEB -> xTrackersWebImporter;
             case VANECK_WEB -> vanEckWebImporter;
+            case AMUNDI_WEB -> amundiWebImporter;
             default -> throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
         };
     }

@@ -37,7 +37,12 @@ public enum ImporterType {
     /**
      * VanEck Web importer - fetches holdings from VanEck website
      */
-    VANECK_WEB("VanEck Web", "VanEck ETF holdings from website");
+    VANECK_WEB("VanEck Web", "VanEck ETF holdings from website"),
+
+    /**
+     * Amundi Web importer - fetches holdings from Amundi website
+     */
+    AMUNDI_WEB("Amundi Web", "Amundi ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -60,7 +65,7 @@ public enum ImporterType {
      * @return true if this is a web importer
      */
     public boolean isWebImporter() {
-        return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB;
+        return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB || this == AMUNDI_WEB;
     }
 
     /**
