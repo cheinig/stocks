@@ -103,7 +103,7 @@ public class FidelityExcelImporter implements FileImporter {
                 try {
                     BigDecimal percentage = new BigDecimal(percentageStr);
 
-                    if (percentage.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (percentage.compareTo(new BigDecimal("0.000001")) < 0) {
                         throw new InvalidFileFormatException("Fidelity",
                             String.format("Percentage must be positive at row %d", i + 1));
                     }

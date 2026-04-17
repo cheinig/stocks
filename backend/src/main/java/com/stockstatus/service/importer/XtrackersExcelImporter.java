@@ -104,7 +104,7 @@ public class XtrackersExcelImporter implements FileImporter {
                 try {
                     BigDecimal percentage = new BigDecimal(weightingStr);
 
-                    if (percentage.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (percentage.compareTo(new BigDecimal("0.000001")) < 0) {
                         throw new InvalidFileFormatException("Xtrackers",
                             String.format("Percentage must be positive at row %d", i + 1));
                     }

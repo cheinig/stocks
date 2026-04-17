@@ -218,7 +218,7 @@ public class AmundiWebImporter implements WebImporter {
                         continue;
                     }
 
-                    if (percentage == null || percentage.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (percentage == null || percentage.compareTo(new BigDecimal("0.000001")) < 0) {
                         log.warn("Skipping row {} - invalid percentage: {}", rowNumber, percentage);
                         continue;
                     }
