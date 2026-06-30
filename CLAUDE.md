@@ -23,21 +23,19 @@ ist auf **ArgoCD / GitOps** umgestellt und lebt im separaten Repo
 
 **Laufzeit ändern = im `homelab-infra`-Repo ändern + pushen.** ArgoCD synct dann.
 
-## Eine neue Version ausrollen
+## Eine neue Version ausrollen — vollautomatisch
+
+**Du musst nichts weiter tun als auf `main` pushen.**
 
 1. Code ändern, auf `main` pushen → **CI (GitHub Actions) baut & pusht** die
-   Images nach GHCR: `ghcr.io/cheinig/stocks-backend` und `-frontend`, Tags
-   `latest`, `main-<sha>`, semver (bei `v*`-Tag).
-2. **Deploy = unveränderliche Image-Referenz in
-   `homelab-infra/manifests/stocks/<backend|frontend>-deployment.yaml` bumpen
-   + pushen.** ArgoCD rollt aus.
+   Images nach GHCR (Tags `latest`, `main-<sha>`, semver bei `v*`).
+2. **ArgoCD Image Updater** (im Cluster) erkennt den neuen `:latest`-Digest,
+   schreibt ihn per git-write-back nach `homelab-infra/manifests/stocks/kustomization.yaml`
+   und **ArgoCD rollt automatisch aus**. Kein manueller Schritt.
 
-Die Deployments sind bewusst auf **Digest** gepinnt
-(`...@sha256:...`), nicht auf `:latest` — so ist reproduzierbar, was läuft, und
-ein Release ist ein expliziter, nachvollziehbarer Bump. Für die neue Version den
-Digest (oder einen unveränderlichen Tag wie `main-<sha>`/semver) des frischen
-CI-Builds eintragen. `:latest` NICHT wieder verwenden (ArgoCD würde kein
-Redeploy auslösen).
+Der effektive Digest steht in `homelab-infra/.../kustomization.yaml` (`images:`)
+und wird vom Updater verwaltet — dort nicht von Hand dranfummeln. Reproduzierbar
+bleibt es trotzdem, weil jeder Deploy ein Commit ist (Author `argocd-image-updater`).
 
 ## Secrets
 
