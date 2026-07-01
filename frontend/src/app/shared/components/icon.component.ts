@@ -54,7 +54,9 @@ export class IconComponent {
       'warning': 'exclamation-triangle',
       'help_outline': 'question-circle',
       'cloud_upload': 'cloud-upload',
+      'upload_file': 'file-earmark-arrow-up',
       'insert_drive_file': 'file-earmark',
+      'check_circle': 'check-circle',
       'error': 'x-circle',
       'account_circle': 'person-circle',
       'logout': 'box-arrow-right'
