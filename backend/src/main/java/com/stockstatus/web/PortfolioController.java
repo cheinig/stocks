@@ -5,10 +5,12 @@ import com.stockstatus.domain.Portfolio;
 import com.stockstatus.domain.PortfolioPosition;
 import com.stockstatus.domain.Stock;
 import com.stockstatus.domain.ETF;
+import com.stockstatus.dto.PortfolioImportResultDTO;
 import com.stockstatus.dto.PortfolioPositionRequestDTO;
 import com.stockstatus.dto.PortfolioPositionResponseDTO;
 import com.stockstatus.dto.PortfolioRequestDTO;
 import com.stockstatus.dto.PortfolioResponseDTO;
+import com.stockstatus.exception.InvalidFileFormatException;
 import com.stockstatus.service.PortfolioService;
 import com.stockstatus.service.StockService;
 import com.stockstatus.service.ETFService;
@@ -20,8 +22,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +42,8 @@ public class PortfolioController {
     private final PortfolioService portfolioService;
     private final StockService stockService;
     private final ETFService etfService;
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
     /**
      * Create a new portfolio
@@ -244,6 +250,48 @@ public class PortfolioController {
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Import current position values from a portfolio CSV export
+     * POST /api/portfolios/{id}/import-values
+     */
+    @PostMapping(value = "/{id}/import-values", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PortfolioImportResultDTO> importPositionValues(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file
+    ) {
+        log.info("REST request to import position values for Portfolio ID: {}", id);
+
+        if (file.isEmpty()) {
+            throw new InvalidFileFormatException("File is empty");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new InvalidFileFormatException(
+                String.format("File size exceeds maximum allowed size of %d MB", MAX_FILE_SIZE / (1024 * 1024))
+            );
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
+            throw new InvalidFileFormatException("Invalid file type. Only CSV files (.csv) are allowed");
+        }
+
+        try {
+            PortfolioImportResultDTO result = portfolioService.importPositionValues(id, file);
+            return ResponseEntity.ok(result);
+        } catch (InvalidFileFormatException e) {
+            log.error("Invalid file format for Portfolio ID {}: {}", id, e.getMessage());
+
+            PortfolioImportResultDTO errorResult = PortfolioImportResultDTO.builder()
+                .portfolioId(id)
+                .success(false)
+                .errorMessage(e.getMessage())
+                .build();
+
+            return ResponseEntity.badRequest().body(errorResult);
+        }
     }
 
     /**

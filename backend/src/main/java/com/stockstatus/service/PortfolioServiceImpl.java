@@ -1,20 +1,27 @@
 package com.stockstatus.service;
 
 import com.stockstatus.domain.AssetType;
+import com.stockstatus.domain.ETF;
 import com.stockstatus.domain.Portfolio;
 import com.stockstatus.domain.PortfolioPosition;
+import com.stockstatus.domain.Stock;
+import com.stockstatus.dto.PortfolioImportResultDTO;
+import com.stockstatus.dto.PortfolioValueEntry;
 import com.stockstatus.exception.DuplicateResourceException;
 import com.stockstatus.exception.ResourceNotFoundException;
 import com.stockstatus.repository.PortfolioPositionRepository;
 import com.stockstatus.repository.PortfolioRepository;
+import com.stockstatus.service.importer.ZeroCsvImporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +38,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final PortfolioPositionRepository positionRepository;
     private final StockService stockService;
     private final ETFService etfService;
+    private final ZeroCsvImporter zeroCsvImporter;
 
     @Override
     public Portfolio createPortfolio(Portfolio portfolio) {
@@ -200,5 +208,83 @@ public class PortfolioServiceImpl implements PortfolioService {
         findById(portfolioId);
 
         return positionRepository.findEtfPositionsByPortfolioId(portfolioId);
+    }
+
+    @Override
+    public PortfolioImportResultDTO importPositionValues(Long portfolioId, MultipartFile file) {
+        log.info("Importing position values for portfolio {} from file: {}",
+                 portfolioId, file.getOriginalFilename());
+
+        // Verify portfolio exists (positions are matched via repository below)
+        findById(portfolioId);
+
+        List<PortfolioValueEntry> entries = zeroCsvImporter.parseFile(file);
+
+        int updatedCount = 0;
+        List<String> unmatchedIsins = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+
+        for (PortfolioValueEntry entry : entries) {
+            String isin = entry.isin();
+            BigDecimal value = entry.value();
+
+            // Resolve ISIN to a stock or ETF asset
+            AssetType assetType = null;
+            Long assetId = null;
+
+            Optional<Stock> stock = stockService.findByIsin(isin);
+            if (stock.isPresent()) {
+                assetType = AssetType.STOCK;
+                assetId = stock.get().getId();
+            } else {
+                Optional<ETF> etf = etfService.findByIsin(isin);
+                if (etf.isPresent()) {
+                    assetType = AssetType.ETF;
+                    assetId = etf.get().getId();
+                }
+            }
+
+            if (assetType == null) {
+                unmatchedIsins.add(isin);
+                continue;
+            }
+
+            Optional<PortfolioPosition> position = positionRepository
+                .findByPortfolioIdAndAssetTypeAndAssetId(portfolioId, assetType, assetId);
+
+            if (position.isEmpty()) {
+                unmatchedIsins.add(isin);
+                continue;
+            }
+
+            // A value that rounds to zero would violate the quantity > 0 invariant
+            if (value.compareTo(BigDecimal.ONE) < 0) {
+                warnings.add(String.format(
+                    "Wert für %s (%s €) ist kleiner als 1 € und wurde übersprungen", isin, value));
+                continue;
+            }
+
+            PortfolioPosition pos = position.get();
+            pos.setQuantity(value);
+            positionRepository.save(pos);
+            updatedCount++;
+        }
+
+        if (!unmatchedIsins.isEmpty()) {
+            warnings.add(String.format(
+                "%d ISIN(s) konnten keiner Position im Portfolio zugeordnet werden", unmatchedIsins.size()));
+        }
+
+        log.info("Imported values for portfolio {}: {} updated, {} unmatched",
+                 portfolioId, updatedCount, unmatchedIsins.size());
+
+        return PortfolioImportResultDTO.builder()
+            .portfolioId(portfolioId)
+            .totalRows(entries.size())
+            .updatedCount(updatedCount)
+            .unmatchedIsins(unmatchedIsins)
+            .warnings(warnings)
+            .success(true)
+            .build();
     }
 }

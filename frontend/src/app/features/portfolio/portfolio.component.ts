@@ -20,6 +20,8 @@ import { ErrorMessageComponent } from '../../shared/components/error-message.com
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog.component';
 import { IconComponent } from '../../shared/components/icon.component';
 import { PositionFormComponent } from './position-form/position-form.component';
+import { PortfolioImportDialogComponent } from './portfolio-import-dialog/portfolio-import-dialog.component';
+import { PortfolioImportResult } from '../../models/portfolio.model';
 
 @Component({
   selector: 'app-portfolio',
@@ -47,6 +49,10 @@ import { PositionFormComponent } from './position-form/position-form.component';
               Logos aktualisieren
             </button>
           }
+          <button mat-stroked-button color="primary" (click)="importValues()">
+            <mat-icon fontIcon="upload_file"></mat-icon>
+            Werte importieren
+          </button>
           <button mat-raised-button color="primary" (click)="addPosition()">
             <mat-icon fontIcon="add"></mat-icon>
             Position hinzufügen
@@ -351,6 +357,24 @@ export class PortfolioComponent implements OnInit {
             this.snackBar.open('Fehler beim Hinzufügen der Position', 'OK', { duration: 3000 });
           }
         });
+      }
+    });
+  }
+
+  importValues(): void {
+    const dialogRef = this.dialog.open(PortfolioImportDialogComponent, {
+      width: '520px',
+      data: { portfolioId: this.PORTFOLIO_ID }
+    });
+
+    dialogRef.afterClosed().subscribe((result: PortfolioImportResult | null) => {
+      if (result?.success) {
+        this.loadPortfolio();
+        this.snackBar.open(
+          `${result.updatedCount} Position(en) aktualisiert`,
+          'OK',
+          { duration: 3000 }
+        );
       }
     });
   }

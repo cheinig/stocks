@@ -46,3 +46,13 @@ export interface PortfolioWithPositions {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PortfolioImportResult {
+  portfolioId: number;
+  totalRows: number;
+  updatedCount: number;
+  unmatchedIsins: string[];
+  warnings: string[];
+  success: boolean;
+  errorMessage?: string;
+}

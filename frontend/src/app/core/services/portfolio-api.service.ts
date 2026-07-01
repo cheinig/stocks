@@ -7,7 +7,8 @@ import {
   PortfolioResponse,
   PortfolioPosition,
   PortfolioPositionRequest,
-  PortfolioWithPositions
+  PortfolioWithPositions,
+  PortfolioImportResult
 } from '../../models/portfolio.model';
 import { Page, PageRequest } from '../../models/page.model';
 
@@ -75,5 +76,11 @@ export class PortfolioApiService {
 
   getEtfPositions(portfolioId: number): Observable<PortfolioPosition[]> {
     return this.http.get<PortfolioPosition[]>(`${this.baseUrl}/${portfolioId}/positions/etfs`);
+  }
+
+  importValues(portfolioId: number, file: File): Observable<PortfolioImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<PortfolioImportResult>(`${this.baseUrl}/${portfolioId}/import-values`, formData);
   }
 }

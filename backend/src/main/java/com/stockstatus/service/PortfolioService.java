@@ -3,8 +3,10 @@ package com.stockstatus.service;
 import com.stockstatus.domain.AssetType;
 import com.stockstatus.domain.Portfolio;
 import com.stockstatus.domain.PortfolioPosition;
+import com.stockstatus.dto.PortfolioImportResultDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -112,4 +114,17 @@ public interface PortfolioService {
      * @throws com.stockstatus.exception.ResourceNotFoundException if portfolio not found
      */
     List<PortfolioPosition> getEtfPositions(Long portfolioId);
+
+    /**
+     * Import current position values from a portfolio CSV export.
+     * For each ISIN in the file the matching position's value (quantity) is
+     * overwritten with the rounded euro value. ISINs without a matching position
+     * are skipped and reported.
+     * @param portfolioId the portfolio ID
+     * @param file the CSV file
+     * @return statistics about the import (updated count, unmatched ISINs, warnings)
+     * @throws com.stockstatus.exception.ResourceNotFoundException if portfolio not found
+     * @throws com.stockstatus.exception.InvalidFileFormatException if the file cannot be parsed
+     */
+    PortfolioImportResultDTO importPositionValues(Long portfolioId, MultipartFile file);
 }
