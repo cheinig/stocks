@@ -27,8 +27,8 @@ import java.util.List;
 @Slf4j
 public class FidelityWebImporter implements WebImporter {
 
-    private static final String BASE_API_URL = "https://www.fidelity.lu/xapi/fund/portfolio/download/fundFullHolding";
-    private static final String QUERY_PARAMS = "countries=lu&country=lu&languages=en&language=en&channels=ce.private-investor&channel=ce.private-investor";
+    private static final String BASE_API_URL = "https://partner.fidelity.de/xapi/fund/portfolio/download/fundFullHolding";
+    private static final String QUERY_PARAMS = "countries=de&country=de&languages=en&language=en&channels=ce.private-investor&channel=ce.private-investor";
 
     private final RestTemplate restTemplate;
     private final FidelityExcelImporter fidelityExcelImporter;
