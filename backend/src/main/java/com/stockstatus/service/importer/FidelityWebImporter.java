@@ -50,9 +50,26 @@ public class FidelityWebImporter implements WebImporter {
 
             log.info("Fetching Excel file from: {}", apiUrl);
 
-            // Set headers
+            // Fidelity sits behind Akamai bot protection, which rejects requests that don't look
+            // like a real Chrome browser (403 "Access Denied"). A minimal User-Agent is not enough;
+            // the full set of browser headers (plus HTTP/2, configured on the RestTemplate) is required.
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Mozilla/5.0");
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+            headers.set("Accept", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*;q=0.8");
+            headers.set("Accept-Language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7");
+            // Akamai requires an Accept-Encoding header, but we ask for "identity" so the response
+            // is uncompressed xlsx that can be parsed directly (the JDK HttpClient does not
+            // transparently decompress gzip).
+            headers.set("Accept-Encoding", "identity");
+            headers.set("sec-ch-ua", "\"Chromium\";v=\"126\", \"Not.A/Brand\";v=\"24\"");
+            headers.set("sec-ch-ua-mobile", "?0");
+            headers.set("sec-ch-ua-platform", "\"Windows\"");
+            headers.set("Sec-Fetch-Dest", "document");
+            headers.set("Sec-Fetch-Mode", "navigate");
+            headers.set("Sec-Fetch-Site", "none");
+            headers.set("Upgrade-Insecure-Requests", "1");
+            headers.set("Referer", "https://partner.fidelity.de/");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
