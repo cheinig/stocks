@@ -47,7 +47,12 @@ public enum ImporterType {
     /**
      * Fidelity Web importer - fetches holdings from Fidelity website
      */
-    FIDELITY_WEB("Fidelity Web", "Fidelity ETF holdings from website");
+    FIDELITY_WEB("Fidelity Web", "Fidelity ETF holdings from website"),
+
+    /**
+     * L&G Web importer - fetches holdings from the L&G (LGIM) fund centre
+     */
+    LG_WEB("L&G Web", "L&G ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -70,7 +75,8 @@ public enum ImporterType {
      * @return true if this is a web importer
      */
     public boolean isWebImporter() {
-        return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB || this == AMUNDI_WEB || this == FIDELITY_WEB;
+        return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB || this == AMUNDI_WEB
+            || this == FIDELITY_WEB || this == LG_WEB;
     }
 
     /**

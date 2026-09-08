@@ -256,7 +256,8 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.XTRACKERS_WEB, label: 'XTrackers Web' },
     { value: ImporterType.VANECK_WEB, label: 'VanEck Web' },
     { value: ImporterType.AMUNDI_WEB, label: 'Amundi Web' },
-    { value: ImporterType.FIDELITY_WEB, label: 'Fidelity Web' }
+    { value: ImporterType.FIDELITY_WEB, label: 'Fidelity Web' },
+    { value: ImporterType.LG_WEB, label: 'L&G Web' }
   ];
 
   showWebUrlField = signal(false);
@@ -289,8 +290,8 @@ export class EtfFormComponent implements OnInit {
       const needsTickerSymbol = importerType && requiresTickerSymbol(importerType);
 
       // VanEck Web needs tickerSymbol but not webUrl
-      // Amundi Web and Fidelity Web need neither webUrl nor tickerSymbol (use ISIN and fixed API endpoint)
-      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB;
+      // Amundi Web, Fidelity Web and L&G Web need neither webUrl nor tickerSymbol (use ISIN and fixed API endpoints)
+      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB && importerType !== ImporterType.LG_WEB;
 
       this.showWebUrlField.set(needsWebUrl);
       this.showWebDataIdField.set(needsDataId);
@@ -347,7 +348,7 @@ export class EtfFormComponent implements OnInit {
             const isWeb = isWebImporter(etf.importerType);
             const needsDataId = requiresWebDataId(etf.importerType);
             const needsTickerSymbol = requiresTickerSymbol(etf.importerType);
-            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB;
+            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB && etf.importerType !== ImporterType.LG_WEB;
 
             this.showWebUrlField.set(needsWebUrl);
             this.showWebDataIdField.set(needsDataId);
