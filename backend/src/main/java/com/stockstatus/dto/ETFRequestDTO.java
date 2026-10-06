@@ -33,9 +33,6 @@ public class ETFRequestDTO {
     @Size(max = 500, message = "Web URL must not exceed 500 characters")
     private String webUrl;
 
-    @Size(max = 100, message = "Web Data ID must not exceed 100 characters")
-    private String webDataId;
-
     @Size(max = 50, message = "Ticker Symbol must not exceed 50 characters")
     private String tickerSymbol;
 }

@@ -23,7 +23,6 @@ public class ETFResponseDTO {
     private String isin;
     private ImporterType importerType;
     private String webUrl;
-    private String webDataId;
     private String tickerSymbol;
     private boolean hasLogo;
     private LocalDateTime createdAt;
@@ -39,7 +38,6 @@ public class ETFResponseDTO {
             .isin(etf.getIsin())
             .importerType(etf.getImporterType())
             .webUrl(etf.getWebUrl())
-            .webDataId(etf.getWebDataId())
             .tickerSymbol(etf.getTickerSymbol())
             .hasLogo(etf.getLogo() != null && etf.getLogo().length > 0)
             .createdAt(etf.getCreatedAt())
@@ -57,7 +55,6 @@ public class ETFResponseDTO {
             .isin(this.isin)
             .importerType(this.importerType)
             .webUrl(this.webUrl)
-            .webDataId(this.webDataId)
             .tickerSymbol(this.tickerSymbol)
             .build();
     }

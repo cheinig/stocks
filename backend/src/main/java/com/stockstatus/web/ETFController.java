@@ -47,7 +47,6 @@ public class ETFController {
             .isin(request.getIsin())
             .importerType(request.getImporterType())
             .webUrl(request.getWebUrl())
-            .webDataId(request.getWebDataId())
             .tickerSymbol(request.getTickerSymbol())
             .build();
 
@@ -103,7 +102,6 @@ public class ETFController {
             .isin(request.getIsin())
             .importerType(request.getImporterType())
             .webUrl(request.getWebUrl())
-            .webDataId(request.getWebDataId())
             .tickerSymbol(request.getTickerSymbol())
             .build();
 

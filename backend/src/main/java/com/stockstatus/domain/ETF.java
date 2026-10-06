@@ -51,10 +51,6 @@ public class ETF {
     @Column(name = "web_url", length = 500)
     private String webUrl;
 
-    @Size(max = 100, message = "Web Data ID must not exceed 100 characters")
-    @Column(name = "web_data_id", length = 100)
-    private String webDataId;
-
     @Size(max = 50, message = "Ticker Symbol must not exceed 50 characters")
     @Column(name = "ticker_symbol", length = 50)
     private String tickerSymbol;
