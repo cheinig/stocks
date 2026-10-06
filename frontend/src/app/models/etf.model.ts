@@ -9,7 +9,6 @@ export interface ETF {
   isin: string;
   importerType: ImporterType;
   webUrl?: string;
-  webDataId?: string;
   tickerSymbol?: string;
   hasLogo?: boolean;
   createdAt?: string;
@@ -21,7 +20,6 @@ export interface ETFRequest {
   isin: string;
   importerType: ImporterType;
   webUrl?: string;
-  webDataId?: string;
   tickerSymbol?: string;
 }
 
@@ -31,7 +29,6 @@ export interface ETFResponse {
   isin: string;
   importerType: ImporterType;
   webUrl?: string;
-  webDataId?: string;
   tickerSymbol?: string;
   hasLogo?: boolean;
   createdAt: string;
