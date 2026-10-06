@@ -12,7 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { EtfStateService } from '../../../core/services/etf-state.service';
 import { EtfApiService } from '../../../core/services/etf-api.service';
 import { ETFRequest, ImporterType } from '../../../models/etf.model';
-import { isWebImporter, requiresWebDataId, requiresTickerSymbol } from '../../../models/enums';
+import { isWebImporter, requiresTickerSymbol } from '../../../models/enums';
 import { isinValidator } from '../../../shared/validators/isin.validator';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message.component';
@@ -116,17 +116,6 @@ import { IconComponent } from '../../../shared/components/icon.component';
                     }
                     <mat-hint>Basis-URL für den Web-basierten Import</mat-hint>
                   </mat-form-field>
-
-                  @if (showWebDataIdField()) {
-                    <mat-form-field appearance="outline" class="full-width">
-                      <mat-label>Web Data ID</mat-label>
-                      <input matInput formControlName="webDataId" placeholder="z.B. 1478358465952">
-                      @if (etfForm.get('webDataId')?.hasError('required') && etfForm.get('webDataId')?.touched) {
-                        <mat-error>Web Data ID ist erforderlich für iShares Web-Importer</mat-error>
-                      }
-                      <mat-hint>ID für die AJAX-Anfrage (z.B. Timestamp)</mat-hint>
-                    </mat-form-field>
-                  }
                 }
 
                 @if (showTickerSymbolField()) {
@@ -261,7 +250,6 @@ export class EtfFormComponent implements OnInit {
   ];
 
   showWebUrlField = signal(false);
-  showWebDataIdField = signal(false);
   showTickerSymbolField = signal(false);
 
   constructor() {
@@ -270,7 +258,6 @@ export class EtfFormComponent implements OnInit {
       isin: ['', [Validators.required, isinValidator()]],
       importerType: ['', Validators.required],
       webUrl: [''],
-      webDataId: [''],
       tickerSymbol: ['']
     });
   }
@@ -283,10 +270,9 @@ export class EtfFormComponent implements OnInit {
       this.loadEtf();
     }
 
-    // Listen to importerType changes to show/hide webUrl, webDataId and tickerSymbol fields
+    // Listen to importerType changes to show/hide webUrl and tickerSymbol fields
     this.etfForm.get('importerType')?.valueChanges.subscribe(importerType => {
       const isWeb = importerType && isWebImporter(importerType);
-      const needsDataId = importerType && requiresWebDataId(importerType);
       const needsTickerSymbol = importerType && requiresTickerSymbol(importerType);
 
       // VanEck Web needs tickerSymbol but not webUrl
@@ -294,11 +280,9 @@ export class EtfFormComponent implements OnInit {
       const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB && importerType !== ImporterType.LG_WEB;
 
       this.showWebUrlField.set(needsWebUrl);
-      this.showWebDataIdField.set(needsDataId);
       this.showTickerSymbolField.set(needsTickerSymbol);
 
       const webUrlControl = this.etfForm.get('webUrl');
-      const webDataIdControl = this.etfForm.get('webDataId');
       const tickerSymbolControl = this.etfForm.get('tickerSymbol');
 
       if (needsWebUrl) {
@@ -306,13 +290,6 @@ export class EtfFormComponent implements OnInit {
       } else {
         webUrlControl?.clearValidators();
         webUrlControl?.setValue('');
-      }
-
-      if (needsDataId) {
-        webDataIdControl?.setValidators([Validators.required]);
-      } else {
-        webDataIdControl?.clearValidators();
-        webDataIdControl?.setValue('');
       }
 
       if (needsTickerSymbol) {
@@ -323,7 +300,6 @@ export class EtfFormComponent implements OnInit {
       }
 
       webUrlControl?.updateValueAndValidity();
-      webDataIdControl?.updateValueAndValidity();
       tickerSymbolControl?.updateValueAndValidity();
     });
   }
@@ -340,30 +316,22 @@ export class EtfFormComponent implements OnInit {
             isin: etf.isin,
             importerType: etf.importerType,
             webUrl: etf.webUrl || '',
-            webDataId: etf.webDataId || '',
             tickerSymbol: etf.tickerSymbol || ''
           });
-          // Trigger visibility check and validation for webUrl, webDataId and tickerSymbol fields
+          // Trigger visibility check and validation for webUrl and tickerSymbol fields
           if (etf.importerType) {
             const isWeb = isWebImporter(etf.importerType);
-            const needsDataId = requiresWebDataId(etf.importerType);
             const needsTickerSymbol = requiresTickerSymbol(etf.importerType);
             const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB && etf.importerType !== ImporterType.LG_WEB;
 
             this.showWebUrlField.set(needsWebUrl);
-            this.showWebDataIdField.set(needsDataId);
             this.showTickerSymbolField.set(needsTickerSymbol);
 
             const webUrlControl = this.etfForm.get('webUrl');
-            const webDataIdControl = this.etfForm.get('webDataId');
             const tickerSymbolControl = this.etfForm.get('tickerSymbol');
 
             if (needsWebUrl) {
               webUrlControl?.setValidators([Validators.required]);
-            }
-
-            if (needsDataId) {
-              webDataIdControl?.setValidators([Validators.required]);
             }
 
             if (needsTickerSymbol) {
@@ -371,7 +339,6 @@ export class EtfFormComponent implements OnInit {
             }
 
             webUrlControl?.updateValueAndValidity();
-            webDataIdControl?.updateValueAndValidity();
             tickerSymbolControl?.updateValueAndValidity();
           }
           if (etf.hasLogo) {

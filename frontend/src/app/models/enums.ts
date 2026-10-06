@@ -20,10 +20,6 @@ export function isWebImporter(importerType: ImporterType): boolean {
   return importerType === ImporterType.ISHARES_WEB || importerType === ImporterType.XTRACKERS_WEB || importerType === ImporterType.VANECK_WEB || importerType === ImporterType.AMUNDI_WEB || importerType === ImporterType.FIDELITY_WEB || importerType === ImporterType.LG_WEB;
 }
 
-export function requiresWebDataId(importerType: ImporterType): boolean {
-  return importerType === ImporterType.ISHARES_WEB;
-}
-
 export function requiresTickerSymbol(importerType: ImporterType): boolean {
   return importerType === ImporterType.VANECK_WEB;
 }

@@ -12,188 +12,229 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Importer for iShares ETF holdings from web source
+ * Importer for iShares ETF holdings from web source.
+ *
+ * <p>iShares retired the old {@code {webUrl}/{webDataId}.ajax?tab=all&fileType=json} endpoint
+ * (it now answers "File not found" with HTTP 404). The redesigned product pages load their
+ * holdings table from BlackRock's product-data API instead:
+ * {@code /varnish-api/uk-retail01-product-data/product-data/api/v2/get-product-data}.
+ *
+ * <p>That API needs a set of site parameters (locale, targetSite, userType, …) which are not
+ * derivable from the product URL — the German site uses {@code de_DE}/{@code de-ishares-v2},
+ * the UK site {@code en_GB}/{@code ishares-uk}. The product page embeds exactly those parameters
+ * in the props of its holdings component, so they are read from the page at import time. No
+ * per-ETF configuration beyond {@code ETF.webUrl} is required; the former {@code webDataId}
+ * is obsolete.
+ *
+ * <p>Unlike the old row-oriented {@code aaData}, the API returns one parallel array per column
+ * (issueName, isin, holdingPercent, sectorName, countryOfRisk, …).
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ISharesWebImporter implements WebImporter {
 
+    private static final String IMPORTER_NAME = "iShares Web";
+
+    /** Holdings endpoint; the placeholders are filled from the product page's component context. */
+    private static final String HOLDINGS_API_URL =
+        "https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v2/get-product-data"
+            + "?appType=PRODUCT_PAGE&appSubType=%s&targetSite=%s&locale=%s&userType=%s"
+            + "&portfolioId=%s&portfolioType=%s&component=holdings&tab=all";
+
+    /**
+     * The holdings component of the product page carries its API parameters as a flat JSON
+     * object, e.g. {@code "componentId":"holdings","context":{"productId":"251973",…}}.
+     */
+    private static final Pattern HOLDINGS_CONTEXT_PATTERN = Pattern.compile(
+        "\"componentId\"\\s*:\\s*\"holdings\"\\s*,\\s*\"context\"\\s*:\\s*(\\{[^{}]*})");
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Fetch and parse holdings for one iShares product page.
+     * @param webUrl the product page URL (stored in {@code ETF.webUrl}), e.g.
+     *               {@code https://www.ishares.com/de/privatanleger/de/produkte/251973/ishares-…-fund}
+     * @return List of allocation entries
+     */
     @Override
     public List<AllocationEntry> fetchAndParse(String webUrl) {
         log.info("Starting iShares web import from URL: {}", webUrl);
 
-        throw new UnsupportedOperationException(
-            "iShares Web Importer requires webUrl and webDataId. " +
-            "Use fetchAndParse(String webUrl, String webDataId) instead.");
-    }
-
-    /**
-     * Fetch and parse holdings data using webUrl and webDataId
-     * @param webUrl Base URL (e.g., https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund)
-     * @param webDataId Data ID for AJAX call (e.g., 1478358465952)
-     * @return List of allocation entries
-     */
-    public List<AllocationEntry> fetchAndParse(String webUrl, String webDataId) {
-        log.info("Starting iShares web import from URL: {} with dataId: {}", webUrl, webDataId);
+        if (webUrl == null || webUrl.trim().isEmpty()) {
+            throw new InvalidFileFormatException(IMPORTER_NAME, "No web URL provided");
+        }
 
         try {
-            // Build JSON API URL: {webUrl}/{webDataId}.ajax?tab=all&fileType=json
-            String cleanWebUrl = webUrl.endsWith("/") ? webUrl.substring(0, webUrl.length() - 1) : webUrl;
-            String jsonUrl = cleanWebUrl + "/" + webDataId + ".ajax?tab=all&fileType=json";
+            ProductContext context = readProductContext(webUrl.trim());
+            String apiUrl = String.format(HOLDINGS_API_URL,
+                context.appSubType(), context.targetSite(), context.locale(),
+                context.userType(), context.productId(), context.portfolioType());
 
-            log.info("Fetching JSON data from: {}", jsonUrl);
-
-            // Fetch the JSON data
-            String jsonResponse = restTemplate.getForObject(jsonUrl, String.class);
+            log.info("Fetching holdings JSON from: {}", apiUrl);
+            String jsonResponse = restTemplate.getForObject(apiUrl, String.class);
 
             if (jsonResponse == null || jsonResponse.isEmpty()) {
-                throw new InvalidFileFormatException("iShares Web",
-                    "Received empty response from JSON endpoint: " + jsonUrl);
+                throw new InvalidFileFormatException(IMPORTER_NAME,
+                    "Received empty response from holdings API: " + apiUrl);
             }
 
             log.info("Successfully fetched JSON data (size: {} bytes)", jsonResponse.length());
-            log.debug("JSON response preview: {}",
-                jsonResponse.length() > 200 ? jsonResponse.substring(0, 200) + "..." : jsonResponse);
 
-            // Remove BOM (Byte Order Mark) if present
-            if (jsonResponse.startsWith("\uFEFF")) {
-                jsonResponse = jsonResponse.substring(1);
-                log.debug("Removed BOM character from JSON response");
-            }
-
-            // Parse JSON data
-            return parseJsonResponse(jsonResponse);
+            return parseHoldings(jsonResponse);
 
         } catch (InvalidFileFormatException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to fetch data from URL: {} with dataId: {}", webUrl, webDataId, e);
-            throw new InvalidFileFormatException("iShares Web",
+            log.error("Failed to fetch data from URL: {}", webUrl, e);
+            throw new InvalidFileFormatException(IMPORTER_NAME,
                 "Failed to fetch data. Error: " + e.getMessage());
         }
     }
 
+    /**
+     * Load the product page and read the API parameters off its holdings component.
+     */
+    private ProductContext readProductContext(String webUrl) {
+        log.debug("Reading holdings component context from product page: {}", webUrl);
+
+        String page = restTemplate.getForObject(webUrl, String.class);
+        if (page == null || page.isEmpty()) {
+            throw new InvalidFileFormatException(IMPORTER_NAME,
+                "Received empty response from product page: " + webUrl);
+        }
+
+        // The props are stored in an HTML attribute, so the JSON quotes arrive escaped
+        Matcher matcher = HOLDINGS_CONTEXT_PATTERN.matcher(unescapeHtml(page));
+        if (!matcher.find()) {
+            throw new InvalidFileFormatException(IMPORTER_NAME,
+                "Could not find the holdings component on the product page. "
+                    + "Please check that the web URL points to an iShares product page: " + webUrl);
+        }
+
+        try {
+            JsonNode context = objectMapper.readTree(matcher.group(1));
+            ProductContext productContext = new ProductContext(
+                requiredField(context, "productId"),
+                requiredField(context, "portfolioType"),
+                requiredField(context, "appSubType"),
+                requiredField(context, "targetSite"),
+                requiredField(context, "locale"),
+                requiredField(context, "userType"));
+
+            log.debug("Resolved product context: {}", productContext);
+            return productContext;
+
+        } catch (InvalidFileFormatException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InvalidFileFormatException(IMPORTER_NAME,
+                "Could not read the holdings parameters from the product page: " + e.getMessage());
+        }
+    }
+
+    private String requiredField(JsonNode context, String field) {
+        JsonNode value = context.get(field);
+        if (value == null || value.asText().isEmpty()) {
+            throw new InvalidFileFormatException(IMPORTER_NAME,
+                "Holdings parameters on the product page are missing '" + field + "'");
+        }
+        return value.asText();
+    }
 
     /**
-     * Parse JSON response from iShares API
-     * Expected structure:
-     * {
-     *   "aaData": [
-     *     [
-     *       "Ticker",           // 0
-     *       "Name",             // 1
-     *       "Sector",           // 2
-     *       "Asset Class",      // 3
-     *       {...},              // 4 - Market Value
-     *       {"raw": 2.09},      // 5 - Weight (%)
-     *       {...},              // 6 - Nominal Value
-     *       {...},              // 7 - Nominal
-     *       "ISIN",             // 8
-     *       {...},              // 9 - Price
-     *       "Location",         // 10
-     *       "Exchange",         // 11
-     *       "Currency"          // 12
-     *     ]
-     *   ]
-     * }
+     * Resolve the HTML entities that escape the JSON inside the {@code componentprops} attribute.
+     * Only the handful that actually occur there; {@code &amp;} last so it cannot produce new ones.
      */
-    private List<AllocationEntry> parseJsonResponse(String jsonResponse) {
+    private String unescapeHtml(String html) {
+        return html
+            .replace("&quot;", "\"")
+            .replace("&#34;", "\"")
+            .replace("&#39;", "'")
+            .replace("&amp;", "&");
+    }
+
+    /**
+     * Parse the holdings response of the product-data API. Every column is its own array under
+     * {@code componentsByNameMap.holdings.containersByNameMap.all.dataPointsByNameMap}:
+     * <pre>
+     * "issueName":      {"value": ["SITC INTERNATIONAL HOLDINGS LTD", …]}
+     * "isin":           {"value": ["KYG8187G1055", …]}          // null for cash/FX/futures rows
+     * "holdingPercent": {"value": [2.82872, …]}
+     * "sectorName":     {"value": ["Industrie", …]}
+     * "countryOfRisk":  {"value": ["Hongkong", …]}
+     * </pre>
+     */
+    private List<AllocationEntry> parseHoldings(String jsonResponse) {
         try {
-            log.debug("Parsing JSON response");
+            JsonNode dataPoints = objectMapper.readTree(jsonResponse)
+                .path("componentsByNameMap").path("holdings")
+                .path("containersByNameMap").path("all")
+                .path("dataPointsByNameMap");
 
-            JsonNode root = objectMapper.readTree(jsonResponse);
-            JsonNode aaData = root.get("aaData");
+            if (dataPoints.isMissingNode() || !dataPoints.isObject()) {
+                throw new InvalidFileFormatException(IMPORTER_NAME,
+                    "Invalid JSON structure: no holdings data points found");
+            }
 
-            if (aaData == null || !aaData.isArray()) {
-                throw new InvalidFileFormatException("iShares Web",
-                    "Invalid JSON structure: 'aaData' array not found");
+            JsonNode names = column(dataPoints, "issueName");
+            JsonNode percentages = column(dataPoints, "holdingPercent");
+            JsonNode isins = column(dataPoints, "isin");
+            JsonNode sectors = column(dataPoints, "sectorName");
+            JsonNode countries = column(dataPoints, "countryOfRisk");
+
+            if (names.size() != percentages.size()) {
+                throw new InvalidFileFormatException(IMPORTER_NAME,
+                    "Invalid JSON structure: got " + names.size() + " names but "
+                        + percentages.size() + " weights");
             }
 
             List<AllocationEntry> entries = new ArrayList<>();
-            int rowNumber = 0;
 
-            for (JsonNode row : aaData) {
-                rowNumber++;
-
-                if (!row.isArray() || row.size() < 13) {
-                    log.warn("Skipping row {} - invalid structure or insufficient data (expected 13 elements, got {})",
-                        rowNumber, row.size());
+            for (int i = 0; i < names.size(); i++) {
+                String name = text(names, i);
+                if (name == null) {
+                    log.warn("Skipping row {} - missing name", i + 1);
                     continue;
                 }
 
-                try {
-                    // Extract data from the array
-                    // Index 1: Name
-                    String name = row.get(1).asText();
-
-                    // Index 2: Sector - remove all whitespace including non-breaking spaces (\u00A0)
-                    String sectorRaw = row.get(2).asText();
-                    String sector = sectorRaw.strip();  // Java 11+ strip() removes all Unicode whitespace
-                    if (sector.equals(sectorRaw)) {
-                        // If strip() didn't change anything, try manual removal of non-breaking space
-                        sector = sectorRaw.replace("\u00A0", "").trim();
-                    }
-
-                    // Index 5: Weight - get "raw" value from the object
-                    JsonNode weightNode = row.get(5);
-                    BigDecimal percentage = null;
-                    if (weightNode.isObject() && weightNode.has("raw")) {
-                        percentage = new BigDecimal(weightNode.get("raw").asText());
-                    } else if (weightNode.isNumber()) {
-                        percentage = new BigDecimal(weightNode.asDouble());
-                    }
-
-                    // Index 8: ISIN
-                    String isin = row.get(8).asText();
-
-                    // Index 10: Location (Country)
-                    String location = row.get(10).asText();
-
-                    // Validate required fields
-                    if (name == null || name.trim().isEmpty()) {
-                        log.warn("Skipping row {} - missing name", rowNumber);
-                        continue;
-                    }
-
-                    if (percentage == null || percentage.compareTo(new BigDecimal("0.000001")) < 0) {
-                        log.warn("Skipping row {} - invalid percentage: {}", rowNumber, percentage);
-                        continue;
-                    }
-
-                    // Map sector to GICS standard
-                    String mappedSector = mapSectorToGICS(sector);
-
-                    // If sector mapping returned null (e.g., for cash), use "Unbekannt" but don't track as unmapped
-                    String finalSector = mappedSector != null ? mappedSector : "Unbekannt";
-                    boolean shouldTrackAsUnmapped = mappedSector != null && "Unbekannt".equals(mappedSector);
-
-                    // Build the allocation entry
-                    AllocationEntry entry = AllocationEntry.builder()
-                        .name(name.trim())
-                        .isin(isin != null && !isin.trim().isEmpty() ? isin.trim() : "")
-                        .percentage(percentage)
-                        .sector(finalSector)
-                        .country(location != null && !location.trim().isEmpty() ? mapCountryNameToCode(location.trim()) : null)
-                        .originalSector(shouldTrackAsUnmapped && sector != null && !sector.isEmpty() ? sector : null)
-                        .build();
-
-                    entries.add(entry);
-                    log.debug("Parsed row {}: {} - {}%", rowNumber, name, percentage);
-
-                } catch (Exception e) {
-                    log.warn("Error parsing row {}: {}", rowNumber, e.getMessage());
+                BigDecimal percentage = percentage(percentages, i);
+                if (percentage == null || percentage.compareTo(new BigDecimal("0.000001")) < 0) {
+                    // Cash, FX forwards and futures legs are listed with zero or negative weight
+                    log.debug("Skipping row {} ({}) - weight is {}", i + 1, name, percentage);
                     continue;
                 }
+
+                String sector = normalizeSector(text(sectors, i));
+                String mappedSector = mapSectorToGICS(sector);
+
+                // If sector mapping returned null (e.g., for cash), use "Unbekannt" but don't track as unmapped
+                String finalSector = mappedSector != null ? mappedSector : "Unbekannt";
+                boolean shouldTrackAsUnmapped = mappedSector != null && "Unbekannt".equals(mappedSector);
+
+                String isin = text(isins, i);
+                String country = text(countries, i);
+
+                AllocationEntry entry = AllocationEntry.builder()
+                    .name(name)
+                    .isin(isin != null ? isin : "")
+                    .percentage(percentage)
+                    .sector(finalSector)
+                    .country(country != null ? mapCountryNameToCode(country) : null)
+                    .originalSector(shouldTrackAsUnmapped && sector != null ? sector : null)
+                    .build();
+
+                entries.add(entry);
+                log.debug("Parsed row {}: {} - {}%", i + 1, name, percentage);
             }
 
             if (entries.isEmpty()) {
-                throw new InvalidFileFormatException("iShares Web",
+                throw new InvalidFileFormatException(IMPORTER_NAME,
                     "No valid allocation entries found in JSON data");
             }
 
@@ -204,15 +245,54 @@ public class ISharesWebImporter implements WebImporter {
             throw e;
         } catch (Exception e) {
             log.error("Failed to parse JSON response", e);
-            throw new InvalidFileFormatException("iShares Web",
+            throw new InvalidFileFormatException(IMPORTER_NAME,
                 "Failed to parse JSON data: " + e.getMessage());
         }
+    }
+
+    private JsonNode column(JsonNode dataPoints, String name) {
+        JsonNode values = dataPoints.path(name).path("value");
+        if (!values.isArray()) {
+            throw new InvalidFileFormatException(IMPORTER_NAME,
+                "Invalid JSON structure: holdings column '" + name + "' is missing");
+        }
+        return values;
+    }
+
+    /** Trimmed cell value, or null if the cell is absent, null or blank. */
+    private String text(JsonNode column, int index) {
+        JsonNode value = column.get(index);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        String text = value.asText().trim();
+        return text.isEmpty() ? null : text;
+    }
+
+    private BigDecimal percentage(JsonNode column, int index) {
+        JsonNode value = column.get(index);
+        if (value == null || value.isNull() || !value.isNumber()) {
+            return null;
+        }
+        return value.decimalValue();
+    }
+
+    /**
+     * iShares pads some sector names with a non-breaking space (e.g. "Zyklische Konsumgüter "),
+     * which {@link String#strip()} does not remove.
+     */
+    private String normalizeSector(String sector) {
+        if (sector == null) {
+            return null;
+        }
+        String normalized = sector.replace(' ', ' ').strip();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     /**
      * Map iShares sector names to GICS (Global Industry Classification Standard) sectors
      * @param sector The sector name from iShares data
-     * @return GICS-compliant sector name or "Unbekannt" if not mappable
+     * @return GICS-compliant sector name, "Unbekannt" if not mappable, or null for cash positions
      */
     private String mapSectorToGICS(String sector) {
         if (sector == null || sector.trim().isEmpty()) {
@@ -277,7 +357,8 @@ public class ISharesWebImporter implements WebImporter {
                 "Communication Services";
 
             // Cash positions and derivatives - not a real sector, map to null to skip tracking
-            case "cash und/oder derivate", "cash and/or derivatives", "cash", "derivatives",
+            case "cash und/oder derivate", "cash and/or derivatives", "barmittel & derivate",
+                 "cash and derivatives", "cash", "derivatives",
                  "bargeld", "liquidität", "liquidity" ->
                 null;
 
@@ -315,12 +396,34 @@ public class ISharesWebImporter implements WebImporter {
             case "brasilien", "brazil" -> "BR";
             case "mexiko", "mexico" -> "MX";
             case "singapur", "singapore" -> "SG";
+            case "irland", "ireland" -> "IE";
+            case "belgien", "belgium" -> "BE";
+            case "österreich", "austria" -> "AT";
+            case "dänemark", "denmark" -> "DK";
+            case "finnland", "finland" -> "FI";
+            case "schweden", "sweden" -> "SE";
+            case "norwegen", "norway" -> "NO";
+            case "polen", "poland" -> "PL";
+            case "portugal" -> "PT";
+            case "griechenland", "greece" -> "GR";
+            case "israel" -> "IL";
+            case "neuseeland", "new zealand" -> "NZ";
             default -> null; // Return null for unmapped countries
         };
     }
 
     @Override
     public String getImporterName() {
-        return "iShares Web";
+        return IMPORTER_NAME;
+    }
+
+    /** The API parameters the product page hands to its holdings component. */
+    private record ProductContext(
+        String productId,
+        String portfolioType,
+        String appSubType,
+        String targetSite,
+        String locale,
+        String userType) {
     }
 }

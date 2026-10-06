@@ -80,14 +80,6 @@ public enum ImporterType {
     }
 
     /**
-     * Check if this web importer requires a webDataId parameter
-     * @return true if this web importer needs webDataId
-     */
-    public boolean requiresWebDataId() {
-        return this == ISHARES_WEB;
-    }
-
-    /**
      * Check if this web importer requires a ticker symbol parameter
      * @return true if this web importer needs ticker symbol
      */

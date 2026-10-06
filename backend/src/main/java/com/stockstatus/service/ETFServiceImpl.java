@@ -256,14 +256,6 @@ public class ETFServiceImpl implements ETFService {
             );
         }
 
-        // Verify webDataId is configured (only for importers that require it)
-        if (etf.getImporterType().requiresWebDataId() &&
-            (etf.getWebDataId() == null || etf.getWebDataId().isEmpty())) {
-            throw new IllegalArgumentException(
-                "ETF with ID " + etfId + " does not have a web data ID configured"
-            );
-        }
-
         // Get the appropriate web importer
         com.stockstatus.service.importer.WebImporter webImporter = importerFactory.getWebImporter(etf.getImporterType());
 
@@ -271,13 +263,7 @@ public class ETFServiceImpl implements ETFService {
         List<AllocationEntry> allocationEntries;
 
         // Handle different web importer types
-        if (webImporter instanceof com.stockstatus.service.importer.ISharesWebImporter) {
-            // iShares Web requires webUrl and webDataId
-            log.debug("Fetching holdings from URL: {} with dataId: {}", etf.getWebUrl(), etf.getWebDataId());
-            com.stockstatus.service.importer.ISharesWebImporter iSharesImporter =
-                (com.stockstatus.service.importer.ISharesWebImporter) webImporter;
-            allocationEntries = iSharesImporter.fetchAndParse(etf.getWebUrl(), etf.getWebDataId());
-        } else if (webImporter instanceof com.stockstatus.service.importer.VanEckWebImporter) {
+        if (webImporter instanceof com.stockstatus.service.importer.VanEckWebImporter) {
             // VanEck Web requires only ticker symbol
             log.debug("Fetching holdings for ticker symbol: {}", etf.getTickerSymbol());
             allocationEntries = webImporter.fetchAndParse(etf.getTickerSymbol());
@@ -294,7 +280,7 @@ public class ETFServiceImpl implements ETFService {
             log.debug("Fetching holdings for ISIN: {}", etf.getIsin());
             allocationEntries = webImporter.fetchAndParse(etf.getIsin());
         } else {
-            // XTrackers Web and others require only webUrl
+            // iShares Web, XTrackers Web and others require only webUrl
             log.debug("Fetching holdings from URL: {}", etf.getWebUrl());
             allocationEntries = webImporter.fetchAndParse(etf.getWebUrl());
         }
