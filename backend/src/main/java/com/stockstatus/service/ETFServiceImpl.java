@@ -9,6 +9,7 @@ import com.stockstatus.exception.DuplicateETFException;
 import com.stockstatus.exception.ETFNotFoundException;
 import com.stockstatus.repository.ETFAllocationRepository;
 import com.stockstatus.repository.ETFRepository;
+import com.stockstatus.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +39,7 @@ public class ETFServiceImpl implements ETFService {
     private final ETFRepository etfRepository;
     private final ETFAllocationRepository etfAllocationRepository;
     private final StockService stockService;
+    private final StockRepository stockRepository;
     private final com.stockstatus.service.importer.ImporterFactory importerFactory;
 
     @Override
@@ -302,12 +305,17 @@ public class ETFServiceImpl implements ETFService {
         int nextVersion = existingVersions.isEmpty() ? 1 : existingVersions.get(0) + 1;
         log.debug("Creating new allocation version: {}", nextVersion);
 
+        // Resolve stocks against an in-memory index instead of querying per entry: with thousands
+        // of holdings (e.g. Vanguard FTSE All-Cap, ~7000), each query also auto-flushes the growing
+        // persistence context, which made the refresh take minutes.
+        StockIndex stockIndex = new StockIndex(stockService.findAll());
+
         // Process each allocation entry
         List<ETFAllocation> allocations = new ArrayList<>();
 
         for (AllocationEntry entry : allocationEntries) {
             // Find or create stock
-            Stock stock = findOrCreateStock(entry);
+            Stock stock = findOrCreateStock(entry, stockIndex);
 
             // Create ETF allocation
             ETFAllocation allocation = ETFAllocation.builder()
@@ -320,7 +328,11 @@ public class ETFServiceImpl implements ETFService {
             allocations.add(allocation);
         }
 
-        // Save all allocations
+        // Save new stocks first, then all allocations
+        if (!stockIndex.newStocks.isEmpty()) {
+            stockRepository.saveAll(stockIndex.newStocks);
+            log.info("Created {} new stocks for ETF ID: {}", stockIndex.newStocks.size(), etfId);
+        }
         etfAllocationRepository.saveAll(allocations);
 
         log.info("Successfully saved {} allocations as version {} for ETF ID: {}",
@@ -330,11 +342,47 @@ public class ETFServiceImpl implements ETFService {
     }
 
     /**
+     * In-memory lookup of all stocks by ISIN and case-insensitive name. Stocks created during the
+     * refresh are added to it as well, so that duplicates within one import resolve to the same
+     * stock; they are persisted in one go via {@link #newStocks}.
+     */
+    private static final class StockIndex {
+        private final Map<String, Stock> byIsin = new HashMap<>();
+        private final Map<String, Stock> byName = new HashMap<>();
+        private final List<Stock> newStocks = new ArrayList<>();
+
+        StockIndex(List<Stock> stocks) {
+            stocks.forEach(this::add);
+        }
+
+        Optional<Stock> findByIsin(String isin) {
+            return Optional.ofNullable(byIsin.get(isin));
+        }
+
+        Optional<Stock> findByName(String name) {
+            return name == null ? Optional.empty() : Optional.ofNullable(byName.get(name.toLowerCase()));
+        }
+
+        void addNew(Stock stock) {
+            add(stock);
+            newStocks.add(stock);
+        }
+
+        private void add(Stock stock) {
+            byIsin.put(stock.getIsin(), stock);
+            if (stock.getName() != null) {
+                byName.putIfAbsent(stock.getName().toLowerCase(), stock);
+            }
+        }
+    }
+
+    /**
      * Find an existing stock by ISIN or create a new one
      * @param entry the allocation entry containing stock information
+     * @param stockIndex lookup of all known stocks
      * @return the found or created stock
      */
-    private Stock findOrCreateStock(AllocationEntry entry) {
+    private Stock findOrCreateStock(AllocationEntry entry, StockIndex stockIndex) {
         // Check if ISIN is valid (not null, not empty, not just a dash or placeholder)
         boolean hasValidIsin = entry.getIsin() != null
             && !entry.getIsin().isEmpty()
@@ -343,7 +391,7 @@ public class ETFServiceImpl implements ETFService {
 
         // First try to find by ISIN if it's valid
         if (hasValidIsin) {
-            Optional<Stock> existingStock = stockService.findByIsin(entry.getIsin());
+            Optional<Stock> existingStock = stockIndex.findByIsin(entry.getIsin());
             if (existingStock.isPresent()) {
                 Stock stock = existingStock.get();
                 log.debug("Found existing stock by ISIN: {}", entry.getIsin());
@@ -356,7 +404,7 @@ public class ETFServiceImpl implements ETFService {
         }
 
         // If not found by ISIN, try to find by name
-        Optional<Stock> existingStockByName = stockService.findByName(entry.getName());
+        Optional<Stock> existingStockByName = stockIndex.findByName(entry.getName());
         if (existingStockByName.isPresent()) {
             Stock stock = existingStockByName.get();
             log.debug("Found existing stock by name: {}", entry.getName());
@@ -368,7 +416,7 @@ public class ETFServiceImpl implements ETFService {
         }
 
         // Create new stock
-        String isinToUse = hasValidIsin ? entry.getIsin() : generatePlaceholderIsin();
+        String isinToUse = hasValidIsin ? entry.getIsin() : generatePlaceholderIsin(stockIndex);
         log.debug("Creating new stock: {} (ISIN: {})", entry.getName(), isinToUse);
 
         Stock newStock = Stock.builder()
@@ -378,7 +426,8 @@ public class ETFServiceImpl implements ETFService {
             .sector(entry.getSector())
             .build();
 
-        return stockService.createStock(newStock);
+        stockIndex.addNew(newStock);
+        return newStock;
     }
 
     /**
@@ -387,28 +436,17 @@ public class ETFServiceImpl implements ETFService {
      * @param newSector The new sector value from the import
      */
     private void updateSectorIfUnknown(Stock stock, String newSector) {
-        boolean needsUpdate = false;
-
-        // Update sector if import has a valid sector and current is "Unbekannt", null, or empty
+        // Update sector if import has a valid sector and current is "Unbekannt", null, or empty.
+        // The stock is a managed entity (or a new one saved later), so no explicit save is needed.
         if (newSector != null &&
             !newSector.isEmpty() &&
-            !"Unbekannt".equals(newSector)) {
+            !"Unbekannt".equals(newSector) &&
+            (stock.getSector() == null || stock.getSector().isEmpty() || "Unbekannt".equals(stock.getSector()))) {
 
-            // Always update if current sector is "Unbekannt", null, or empty
-            if (stock.getSector() == null ||
-                stock.getSector().isEmpty() ||
-                "Unbekannt".equals(stock.getSector())) {
+            log.info("Updating sector for stock '{}' (ISIN: {}) from '{}' to '{}'",
+                stock.getName(), stock.getIsin(), stock.getSector(), newSector);
 
-                log.info("Updating sector for stock '{}' (ISIN: {}) from '{}' to '{}'",
-                    stock.getName(), stock.getIsin(), stock.getSector(), newSector);
-
-                stock.setSector(newSector);
-                needsUpdate = true;
-            }
-        }
-
-        if (needsUpdate) {
-            stockService.updateStock(stock.getId(), stock);
+            stock.setSector(newSector);
         }
     }
 
@@ -416,10 +454,14 @@ public class ETFServiceImpl implements ETFService {
      * Generate a placeholder ISIN for stocks without a valid ISIN
      * Uses the SONSTIGE prefix with a random number
      */
-    private String generatePlaceholderIsin() {
-        // Generate a random 5-digit number
-        int randomNumber = (int) (Math.random() * 100000);
-        return String.format("SONSTIGE%05d", randomNumber);
+    private String generatePlaceholderIsin(StockIndex stockIndex) {
+        // Generate a random 5-digit number that is not taken yet
+        String isin;
+        do {
+            int randomNumber = (int) (Math.random() * 100000);
+            isin = String.format("SONSTIGE%05d", randomNumber);
+        } while (stockIndex.findByIsin(isin).isPresent());
+        return isin;
     }
 
     @Override
