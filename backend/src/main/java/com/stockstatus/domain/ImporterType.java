@@ -52,7 +52,12 @@ public enum ImporterType {
     /**
      * L&G Web importer - fetches holdings from the L&G (LGIM) fund centre
      */
-    LG_WEB("L&G Web", "L&G ETF holdings from website");
+    LG_WEB("L&G Web", "L&G ETF holdings from website"),
+
+    /**
+     * Vanguard Web importer - fetches holdings from the Vanguard Europe GraphQL API
+     */
+    VANGUARD_WEB("Vanguard Web", "Vanguard ETF holdings from website");
 
     private final String displayName;
     private final String description;
@@ -76,7 +81,7 @@ public enum ImporterType {
      */
     public boolean isWebImporter() {
         return this == ISHARES_WEB || this == XTRACKERS_WEB || this == VANECK_WEB || this == AMUNDI_WEB
-            || this == FIDELITY_WEB || this == LG_WEB;
+            || this == FIDELITY_WEB || this == LG_WEB || this == VANGUARD_WEB;
     }
 
     /**

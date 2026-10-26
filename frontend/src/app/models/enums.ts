@@ -13,11 +13,12 @@ export enum ImporterType {
   VANECK_WEB = 'VANECK_WEB',
   AMUNDI_WEB = 'AMUNDI_WEB',
   FIDELITY_WEB = 'FIDELITY_WEB',
-  LG_WEB = 'LG_WEB'
+  LG_WEB = 'LG_WEB',
+  VANGUARD_WEB = 'VANGUARD_WEB'
 }
 
 export function isWebImporter(importerType: ImporterType): boolean {
-  return importerType === ImporterType.ISHARES_WEB || importerType === ImporterType.XTRACKERS_WEB || importerType === ImporterType.VANECK_WEB || importerType === ImporterType.AMUNDI_WEB || importerType === ImporterType.FIDELITY_WEB || importerType === ImporterType.LG_WEB;
+  return importerType === ImporterType.ISHARES_WEB || importerType === ImporterType.XTRACKERS_WEB || importerType === ImporterType.VANECK_WEB || importerType === ImporterType.AMUNDI_WEB || importerType === ImporterType.FIDELITY_WEB || importerType === ImporterType.LG_WEB || importerType === ImporterType.VANGUARD_WEB;
 }
 
 export function requiresTickerSymbol(importerType: ImporterType): boolean {

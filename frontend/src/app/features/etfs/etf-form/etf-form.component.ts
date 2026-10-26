@@ -246,7 +246,8 @@ export class EtfFormComponent implements OnInit {
     { value: ImporterType.VANECK_WEB, label: 'VanEck Web' },
     { value: ImporterType.AMUNDI_WEB, label: 'Amundi Web' },
     { value: ImporterType.FIDELITY_WEB, label: 'Fidelity Web' },
-    { value: ImporterType.LG_WEB, label: 'L&G Web' }
+    { value: ImporterType.LG_WEB, label: 'L&G Web' },
+    { value: ImporterType.VANGUARD_WEB, label: 'Vanguard Web' }
   ];
 
   showWebUrlField = signal(false);
@@ -277,7 +278,7 @@ export class EtfFormComponent implements OnInit {
 
       // VanEck Web needs tickerSymbol but not webUrl
       // Amundi Web, Fidelity Web and L&G Web need neither webUrl nor tickerSymbol (use ISIN and fixed API endpoints)
-      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB && importerType !== ImporterType.LG_WEB;
+      const needsWebUrl = isWeb && !needsTickerSymbol && importerType !== ImporterType.AMUNDI_WEB && importerType !== ImporterType.FIDELITY_WEB && importerType !== ImporterType.LG_WEB && importerType !== ImporterType.VANGUARD_WEB;
 
       this.showWebUrlField.set(needsWebUrl);
       this.showTickerSymbolField.set(needsTickerSymbol);
@@ -322,7 +323,7 @@ export class EtfFormComponent implements OnInit {
           if (etf.importerType) {
             const isWeb = isWebImporter(etf.importerType);
             const needsTickerSymbol = requiresTickerSymbol(etf.importerType);
-            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB && etf.importerType !== ImporterType.LG_WEB;
+            const needsWebUrl = isWeb && !needsTickerSymbol && etf.importerType !== ImporterType.AMUNDI_WEB && etf.importerType !== ImporterType.FIDELITY_WEB && etf.importerType !== ImporterType.LG_WEB && etf.importerType !== ImporterType.VANGUARD_WEB;
 
             this.showWebUrlField.set(needsWebUrl);
             this.showTickerSymbolField.set(needsTickerSymbol);

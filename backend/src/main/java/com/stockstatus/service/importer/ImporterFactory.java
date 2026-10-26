@@ -27,6 +27,7 @@ public class ImporterFactory {
     private final AmundiWebImporter amundiWebImporter;
     private final FidelityWebImporter fidelityWebImporter;
     private final LGWebImporter lgWebImporter;
+    private final VanguardWebImporter vanguardWebImporter;
 
     /**
      * Get the appropriate importer for the given ImporterType
@@ -113,6 +114,7 @@ public class ImporterFactory {
             case AMUNDI_WEB -> amundiWebImporter;
             case FIDELITY_WEB -> fidelityWebImporter;
             case LG_WEB -> lgWebImporter;
+            case VANGUARD_WEB -> vanguardWebImporter;
             default -> throw new IllegalArgumentException("Unsupported web importer type: " + importerType);
         };
     }

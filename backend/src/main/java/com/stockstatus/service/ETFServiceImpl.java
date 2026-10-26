@@ -244,11 +244,12 @@ public class ETFServiceImpl implements ETFService {
         }
 
         // Verify webUrl is configured (only for importers that require it)
-        // Amundi Web, Fidelity Web and L&G Web do not require webUrl as they use fixed API endpoints
+        // Amundi Web, Fidelity Web, L&G Web and Vanguard Web do not require webUrl as they use fixed API endpoints
         if (!etf.getImporterType().requiresTickerSymbol() &&
             etf.getImporterType() != ImporterType.AMUNDI_WEB &&
             etf.getImporterType() != ImporterType.FIDELITY_WEB &&
             etf.getImporterType() != ImporterType.LG_WEB &&
+            etf.getImporterType() != ImporterType.VANGUARD_WEB &&
             (etf.getWebUrl() == null || etf.getWebUrl().isEmpty())) {
             throw new IllegalArgumentException(
                 "ETF with ID " + etfId + " does not have a web URL configured"
@@ -276,6 +277,10 @@ public class ETFServiceImpl implements ETFService {
             allocationEntries = webImporter.fetchAndParse(etf.getIsin());
         } else if (webImporter instanceof com.stockstatus.service.importer.LGWebImporter) {
             // L&G Web requires only ISIN (resolves the holdings document from the fund centre API)
+            log.debug("Fetching holdings for ISIN: {}", etf.getIsin());
+            allocationEntries = webImporter.fetchAndParse(etf.getIsin());
+        } else if (webImporter instanceof com.stockstatus.service.importer.VanguardWebImporter) {
+            // Vanguard Web requires only ISIN (resolves the fund's portId via the GraphQL API)
             log.debug("Fetching holdings for ISIN: {}", etf.getIsin());
             allocationEntries = webImporter.fetchAndParse(etf.getIsin());
         } else {
