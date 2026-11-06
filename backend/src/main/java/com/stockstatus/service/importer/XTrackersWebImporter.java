@@ -21,6 +21,9 @@ import java.util.List;
 @Slf4j
 public class XTrackersWebImporter implements WebImporter {
 
+    private static final String LEGACY_DOMAIN = "etf.dws.com";
+    private static final String CURRENT_DOMAIN = "etf.deutsche-am.com";
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -30,8 +33,8 @@ public class XTrackersWebImporter implements WebImporter {
 
         try {
             // Build API URL by transforming the base URL
-            // Example: https://etf.dws.com/de-de/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d
-            // -> https://etf.dws.com/api/pdp/de-de/etf/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d/holdings
+            // Example: https://etf.deutsche-am.com/de-de/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d
+            // -> https://etf.deutsche-am.com/api/pdp/de-de/etf/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d/holdings
             String apiUrl = buildApiUrl(webUrl);
 
             log.info("Fetching JSON data from: {}", apiUrl);
@@ -69,8 +72,8 @@ public class XTrackersWebImporter implements WebImporter {
     /**
      * Build API URL from base URL
      * Example transformation:
-     * Input:  https://etf.dws.com/de-de/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d
-     * Output: https://etf.dws.com/api/pdp/de-de/etf/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d/holdings
+     * Input:  https://etf.deutsche-am.com/de-de/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d
+     * Output: https://etf.deutsche-am.com/api/pdp/de-de/etf/LU0292095535-euro-stoxx-quality-dividend-ucits-etf-1d/holdings
      */
     private String buildApiUrl(String baseUrl) {
         try {
@@ -83,21 +86,25 @@ public class XTrackersWebImporter implements WebImporter {
             log.info("Building API URL from base URL: {}", cleanUrl);
 
             // Extract domain and path parts
-            // Expected format: https://etf.dws.com/de-de/LU0292095535-...
+            // Expected format: https://etf.deutsche-am.com/de-de/LU0292095535-...
             int protocolEnd = cleanUrl.indexOf("://");
             if (protocolEnd == -1) {
                 throw new IllegalArgumentException("Invalid URL format: missing protocol");
             }
 
             String protocol = cleanUrl.substring(0, protocolEnd + 3); // e.g., "https://"
-            String remainingUrl = cleanUrl.substring(protocolEnd + 3); // e.g., "etf.dws.com/de-de/LU0292095535-..."
+            String remainingUrl = cleanUrl.substring(protocolEnd + 3); // e.g., "etf.deutsche-am.com/de-de/LU0292095535-..."
 
             int firstSlash = remainingUrl.indexOf('/');
             if (firstSlash == -1) {
                 throw new IllegalArgumentException("Invalid URL format: missing path");
             }
 
-            String domain = remainingUrl.substring(0, firstSlash); // e.g., "etf.dws.com"
+            String domain = remainingUrl.substring(0, firstSlash); // e.g., "etf.deutsche-am.com"
+            if (LEGACY_DOMAIN.equalsIgnoreCase(domain)) {
+                // DWS moved its ETF site; the old host only answers with a redirect
+                domain = CURRENT_DOMAIN;
+            }
             String path = remainingUrl.substring(firstSlash); // e.g., "/de-de/LU0292095535-..."
 
             // Build API URL: protocol + domain + /api/pdp + path + /holdings
@@ -125,7 +132,7 @@ public class XTrackersWebImporter implements WebImporter {
         } catch (Exception e) {
             log.error("Failed to build API URL from base URL: {}", baseUrl, e);
             throw new InvalidFileFormatException("XTrackers Web",
-                "Invalid base URL format. Expected format: https://etf.dws.com/de-de/LU0292095535-etf-name. Error: " + e.getMessage());
+                "Invalid base URL format. Expected format: https://etf.deutsche-am.com/de-de/LU0292095535-etf-name. Error: " + e.getMessage());
         }
     }
 
